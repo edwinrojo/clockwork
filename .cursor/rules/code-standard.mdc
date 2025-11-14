@@ -1,0 +1,20 @@
+---
+alwaysApply: true
+---
+
+# This is critical guideline that must be followed whatever happens.
+- NO unnecessary inline comments unless needed.
+- Separation of concerns is a must (as example but not limited to):
+    - Actions
+    - Services
+    - Repositories
+- With concerns separated, there must be no fat controllers nor models.
+- Always type hint parameters and return types.
+- Always import classes do not use full namespaces.
+- Use single name as much as possible. ASK FIRST if you cannot find suitable one.
+    - Variables
+    - Models
+    - Classes
+    - Attributes
+    - etc.
+- Always refer to @laravel-boost for implementation guide.

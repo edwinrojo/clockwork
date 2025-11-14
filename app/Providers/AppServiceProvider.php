@@ -43,7 +43,28 @@ class AppServiceProvider extends ServiceProvider
 
         Sanctum::usePersonalAccessTokenModel(Token::class);
 
-        FilamentAsset::register([Css::make('app', __DIR__.'/../../resources/css/app.css'), Css::make('blade', Vite::asset('resources/css/blade.css'))]);
+        try {
+            $manifestPath = public_path('build/manifest.json');
+            if (file_exists($manifestPath)) {
+                $manifest = json_decode(file_get_contents($manifestPath), true);
+                if (isset($manifest['resources/css/blade.css']['file'])) {
+                    $bladeAssetPath = public_path('build/' . $manifest['resources/css/blade.css']['file']);
+                    if (file_exists($bladeAssetPath)) {
+                        $bladeAsset = $bladeAssetPath;
+                    } else {
+                        $bladeAsset = Vite::asset('resources/css/blade.css');
+                    }
+                } else {
+                    $bladeAsset = Vite::asset('resources/css/blade.css');
+                }
+            } else {
+                $bladeAsset = Vite::asset('resources/css/blade.css');
+            }
+        } catch (\Exception $e) {
+            $bladeAsset = Vite::asset('resources/css/blade.css');
+        }
+        
+        FilamentAsset::register([Css::make('app', __DIR__.'/../../resources/css/app.css'), Css::make('blade', $bladeAsset)]);
 
         Select::configureUsing(fn (Select $select) => $select->native(false));
 

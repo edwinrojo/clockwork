@@ -47,6 +47,7 @@
         "webklex/laravel-pdfmerger": "*"
     },
     "require-dev": {
+        "laravel/boost": "*",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.29",
         "laravel/telescope": "^5.2",
