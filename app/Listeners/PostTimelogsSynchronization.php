@@ -4,9 +4,10 @@ namespace App\Listeners;
 
 use App\Events\TimelogsFlushed;
 use App\Events\TimelogsSynchronized;
+use App\Jobs\ProcessAffectedTimetables;
 use App\Jobs\ProcessTimesheet;
-use App\Jobs\ProcessTimetable;
 use App\Models\Employee;
+use App\Models\Schedule;
 use App\Traits\TimelogsHasher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
@@ -56,7 +57,22 @@ class PostTimelogsSynchronization
 
                             return $timetable?->checkDigest();
                         })
-                        ->mapWithKeys(fn ($employee) => ["$date|$employee->id" => new ProcessTimetable($employee, Carbon::parse($date))])
+                        ->map(function ($employee) use ($date) {
+                            $dateCarbon = Carbon::parse($date);
+
+                            $schedules = $employee->schedules()
+                                ->active($dateCarbon, $dateCarbon)
+                                ->get()
+                                ->merge(Schedule::where('global', true)->active($dateCarbon, $dateCarbon)->get());
+
+                            $shift = $schedules->first(fn (Schedule $schedule) => $schedule->isActive($dateCarbon));
+
+                            return [
+                                'employee_id' => $employee->id,
+                                'date' => $date,
+                                'shift_id' => $shift?->id,
+                            ];
+                        })
                         ->toArray();
                 });
 
@@ -64,12 +80,10 @@ class PostTimelogsSynchronization
                 return;
             }
 
-            $timesheets = $timetables->map(function ($job, $key) {
-                [$date, $employee] = explode('|', $key);
+            $timesheets = $timetables->map(function ($timetable) {
+                $date = Carbon::parse($timetable['date']);
 
-                $date = Carbon::parse($date);
-
-                return $date->format('Y-m').'|'.$employee;
+                return $date->format('Y-m').'|'.$timetable['employee_id'];
             })
                 ->unique()
                 ->map(function ($employee) {
@@ -85,9 +99,13 @@ class PostTimelogsSynchronization
                 })
                 ->filter();
 
-            Bus::batch($timesheets->values()->concat($timetables)->all())
-                ->onQueue('main')
-                ->dispatch();
+            ProcessAffectedTimetables::dispatch($timetables->values()->all());
+
+            if ($timesheets->isNotEmpty()) {
+                Bus::batch($timesheets->values()->all())
+                    ->onQueue('main')
+                    ->dispatch();
+            }
         }
     }
 }

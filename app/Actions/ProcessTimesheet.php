@@ -2,12 +2,11 @@
 
 namespace App\Actions;
 
-use App\Jobs\ProcessTimetable;
+use App\Actions\ProcessTimetable as ProcessTimetableAction;
 use App\Models\Employee;
 use App\Models\Schedule;
 use App\Models\User;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Bus;
 
 class ProcessTimesheet
 {
@@ -27,12 +26,12 @@ class ProcessTimesheet
             'day' => $day,
         ]);
 
-        $jobs = collect($tables)
-            // TODO
-            // ADD GROUPING LOGIC HERE FOR CUSTOM SCHEDULES (CONTINUOUS MULTIPLE-DAY SPAN SHIFTS)
-            ->map(fn ($table) => new ProcessTimetable($employee, $table->day, $table->shift));
+        $action = app(ProcessTimetableAction::class);
 
-        Bus::batch($jobs->all())
-            ->dispatch();
+        // TODO
+        // ADD GROUPING LOGIC HERE FOR CUSTOM SCHEDULES (CONTINUOUS MULTIPLE-DAY SPAN SHIFTS)
+        foreach ($tables as $table) {
+            $action($employee, $table->day, $table->shift);
+        }
     }
 }

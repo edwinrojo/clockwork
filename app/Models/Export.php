@@ -70,7 +70,18 @@ class Export extends Model
                     return file_get_contents($this->filename);
                 }
 
-                return $content ? base64_decode(stream_get_contents($content)) : null;
+                if (is_resource($content)) {
+                    $rawContent = stream_get_contents($content);
+                    $decoded = base64_decode($rawContent, true);
+                    return $decoded !== false ? $decoded : $rawContent;
+                }
+
+                if (is_string($content)) {
+                    $decoded = base64_decode($content, true);
+                    return $decoded !== false ? $decoded : $content;
+                }
+
+                return null;
             },
             function (mixed $content, array $attributes) {
                 if ($attributes['disk'] !== null && in_array($attributes['disk'], ['public', 'local', 'azure'])) {
@@ -147,5 +158,7 @@ class Export extends Model
         if ($this->disk !== null) {
             return Storage::disk($this->disk)->get($this->filename);
         }
+
+        return null;
     }
 }

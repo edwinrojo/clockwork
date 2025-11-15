@@ -17,9 +17,10 @@ use App\Filament\Actions\TableActions\UpdateEmployeeAction;
 use App\Filament\Actions\TimelogsActionGroup;
 use App\Filament\Filters\OfficeFilter;
 use App\Filament\Superuser\Resources\TimesheetResource;
+use App\Jobs\ProcessAffectedTimetables;
 use App\Jobs\ProcessTimesheet;
-use App\Jobs\ProcessTimetable;
 use App\Models\Employee;
+use App\Models\Schedule;
 use App\Models\Timelog;
 use Filament\Forms;
 use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
@@ -380,7 +381,20 @@ class ListTimesheets extends ListRecords
                 $this->timelogs->forget($this->timelogs->search(fn ($timelog) => $timelog->id === $id));
             }
 
-            ProcessTimetable::dispatchSync($employee, $date);
+            $schedules = $employee->schedules()
+                ->active($date, $date)
+                ->get()
+                ->merge(Schedule::where('global', true)->active($date, $date)->get());
+
+            $shift = $schedules->first(fn (Schedule $schedule) => $schedule->isActive($date));
+
+            ProcessAffectedTimetables::dispatch([
+                [
+                    'employee_id' => $employee->id,
+                    'date' => $date->format('Y-m-d'),
+                    'shift_id' => $shift?->id,
+                ],
+            ]);
         });
     }
 }

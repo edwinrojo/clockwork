@@ -8,8 +8,9 @@ use App\Enums\TimelogState;
 use App\Enums\TimesheetPeriod;
 use App\Filament\Employee\Resources\TimesheetResource;
 use App\Jobs\CertifyTimesheets;
-use App\Jobs\ProcessTimetable;
+use App\Jobs\ProcessAffectedTimetables;
 use App\Models\Employee;
+use App\Models\Schedule;
 use App\Models\Timelog;
 use App\Models\Timesheet;
 use Exception;
@@ -288,7 +289,11 @@ class ViewTimesheet extends ViewRecord
 
                         $existing = Timelog::find(collect($data['timelogs'])->pluck('id'));
 
-                        $existing->filter(fn ($timelog) => $timelog->state !== $timelogs[$timelog->id])->each(function ($timelog) use ($timelogs) {
+                        $employee = Filament::auth()->user();
+
+                        $timetables = [];
+
+                        $existing->filter(fn ($timelog) => $timelog->state !== $timelogs[$timelog->id])->each(function ($timelog) use ($timelogs, $employee, &$timetables) {
                             if ($timelog->recast) {
                                 if ($timelog->original->state !== $timelogs[$timelog->id]) {
                                     $timelog->forceFill(['state' => $timelogs[$timelog->id]])->save();
@@ -312,8 +317,25 @@ class ViewTimesheet extends ViewRecord
                                 $timelog->revision()->make()->forceFill($data)->save();
                             }
 
-                            ProcessTimetable::dispatchSync(Filament::auth()->user(), $timelog->time->clone());
+                            $date = $timelog->time->clone()->startOfDay();
+
+                            $schedules = $employee->schedules()
+                                ->active($date, $date)
+                                ->get()
+                                ->merge(Schedule::where('global', true)->active($date, $date)->get());
+
+                            $shift = $schedules->first(fn (Schedule $schedule) => $schedule->isActive($date));
+
+                            $timetables[] = [
+                                'employee_id' => $employee->id,
+                                'date' => $date->format('Y-m-d'),
+                                'shift_id' => $shift?->id,
+                            ];
                         });
+
+                        if (! empty($timetables)) {
+                            ProcessAffectedTimetables::dispatch($timetables);
+                        }
                     });
 
                     $action->sendSuccessNotification();

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\ProcessTimetable as ProcessTimetableAction;
 use App\Models\Employee;
 use App\Models\Schedule;
 use App\Models\Timesheet;
@@ -15,7 +16,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Bus;
 
 class ProcessTimesheet implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
 {
@@ -98,14 +98,18 @@ class ProcessTimesheet implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
                 return $this->checkDigest($table);
             });
 
-        if ($this->job->getConnectionName() === 'sync') {
-            $days->each(fn ($day) => ProcessTimetable::dispatchSync($this->employee, $day));
-        } else {
-            Bus::batch($days->map(fn ($day) => new ProcessTimetable($this->employee, $day))->all())
-                ->catch(fn () => $sheet->delete())
-                ->onQueue('main')
-                ->dispatch();
-        }
+        $action = app(ProcessTimetableAction::class);
+
+        $employeeSchedules = $this->employee->schedules()
+            ->active($this->month->clone()->startOfMonth(), $this->month->clone()->endOfMonth())
+            ->get()
+            ->merge(Schedule::where('global', true)->active($this->month->clone()->startOfMonth(), $this->month->clone()->endOfMonth())->get());
+
+        $days->each(function ($day) use ($action, $employeeSchedules) {
+            $shift = $employeeSchedules->first(fn (Schedule $schedule) => $schedule->isActive($day));
+
+            $action($this->employee, $day, $shift);
+        });
 
     }
 }

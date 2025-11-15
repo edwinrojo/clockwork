@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs;
+namespace App\Actions;
 
 use App\Helpers\GetRawAttendancePunch;
 use App\Models\Employee;
@@ -8,66 +8,36 @@ use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\Timetable;
 use App\Traits\TimelogsHasher;
-use Illuminate\Bus\Batchable;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 
-class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
+class ProcessTimetable
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     use TimelogsHasher;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(
-        private readonly Employee $employee,
-        private readonly Carbon $date,
-    ) {
-        $this->queue = 'main';
-    }
-
-    /**
-     * Execute the job.
-     */
-    public function handle(): void
+    public function __invoke(Employee $employee, Carbon $date, ?Schedule $shift = null): void
     {
-        $schedule = Schedule::search($this->date, $this->employee);
+        $schedule = $shift ?? Schedule::search($date, $employee);
 
-        $sheet = $this->employee->timesheets()->firstOrCreate(['month' => $this->date->clone()->startOfMonth()]);
+        $sheet = $employee->timesheets()->firstOrCreate(['month' => $date->clone()->startOfMonth()]);
 
-        $timetable = Timetable::firstOrCreate(['date' => $this->date, 'timesheet_id' => $sheet->id], ['punch' => []]);
+        $timetable = Timetable::firstOrCreate(['date' => $date, 'timesheet_id' => $sheet->id], ['punch' => []]);
 
         switch ($schedule?->arrangement) {
             case 'standard-work-hour':
-                $this->standard($schedule, $timetable);
+                $this->standard($employee, $date, $schedule, $timetable);
                 break;
             case 'work-shifting':
-                $this->shift($schedule, $timetable);
+                $this->shift($employee, $date, $schedule, $timetable);
                 break;
             default:
-                $this->fallback($timetable);
+                $this->fallback($employee, $date, $timetable);
         }
     }
 
-    /**
-     * Get the unique ID for the job.
-     */
-    public function uniqueId(): string
+    protected function fallback(Employee $employee, Carbon $date, Timetable $timetable): void
     {
-        return $this->employee->id.'-'.$this->date->format('Y-m-d');
-    }
-
-    protected function fallback(Timetable $timetable): void
-    {
-        $timelogs = $this->employee->timelogs()
-            ->whereDate('time', $this->date)
+        $timelogs = $employee->timelogs()
+            ->whereDate('time', $date)
             ->with('scanner')
             ->get();
 
@@ -77,16 +47,16 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $roster = app(GetRawAttendancePunch::class)($timelogs, $this->date);
+        $roster = app(GetRawAttendancePunch::class)($timelogs, $date);
 
         $timetable->update(['punch' => $roster, 'digest' => $this->generateDigest($timetable, $timelogs), 'absent' => false]);
     }
 
-    protected function standard(Schedule $schedule, Timetable $timetable): void
+    protected function standard(Employee $employee, Carbon $date, Schedule $schedule, Timetable $timetable): void
     {
         $timelogs = $timetable->timelogs;
 
-        $holiday = Holiday::search($this->date);
+        $holiday = Holiday::search($date);
 
         if ($timelogs->isEmpty()) {
             $timetable->delete();
@@ -97,7 +67,7 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
         $roster = [];
 
         foreach ($punches = $schedule->timetable['break'] > 0 ? ['p1', 'p2', 'p3', 'p4'] : ['p1', 'p4'] as $state) {
-            $punchTime = $this->date->clone()->setTime(...explode(':', $schedule->timetable[$state]));
+            $punchTime = $date->clone()->setTime(...explode(':', $schedule->timetable[$state]));
 
             $timelists = $timelogs->reject(fn ($punch) => in_array($punch->id, array_column($roster, 'id')))
                 ->filter(fn ($punch) => ((int) $punchTime->diffInMinutes($punch->time)) <= ($schedule->threshold[$state]['max'] ?? INF))
@@ -138,16 +108,19 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
             };
         }
 
+        $shift1 = 0;
+        $shift2 = 0;
+
         if ($schedule->timetable['break'] > 0) {
             $shift1 = match (isset($roster['p1']['time']) && isset($roster['p2']['time'])) {
-                true => $this->date->clone()->setTime(...explode(':', $schedule->timetable['p1']))
-                    ->diffInMinutes($this->date->clone()->setTime(...explode(':', $schedule->timetable['p2'])), false),
+                true => $date->clone()->setTime(...explode(':', $schedule->timetable['p1']))
+                    ->diffInMinutes($date->clone()->setTime(...explode(':', $schedule->timetable['p2'])), false),
                 false => 0,
             };
 
             $shift2 = match (isset($roster['p3']['time']) && isset($roster['p4']['time'])) {
-                true => $this->date->clone()->setTime(...explode(':', $schedule->timetable['p3']))
-                    ->diffInMinutes($this->date->clone()->setTime(...explode(':', $schedule->timetable['p4']))),
+                true => $date->clone()->setTime(...explode(':', $schedule->timetable['p3']))
+                    ->diffInMinutes($date->clone()->setTime(...explode(':', $schedule->timetable['p4']))),
                 false => 0,
             };
 
@@ -155,18 +128,18 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
                 ($shift2 ? $shift2 - $roster['p3']['undertime'] - $roster['p4']['undertime'] : 0);
         } else {
             $total = match (isset($roster['p1']['time']) && isset($roster['p4']['time'])) {
-                true => $this->date->clone()->setTime(...explode(':', $schedule->timetable['p1']))
-                    ->diffInMinutes($this->date->clone()->setTime(...explode(':', $schedule->timetable['p4'])))
+                true => $date->clone()->setTime(...explode(':', $schedule->timetable['p1']))
+                    ->diffInMinutes($date->clone()->setTime(...explode(':', $schedule->timetable['p4'])))
                     - $roster['p1']['undertime'] - $roster['p4']['undertime'],
                 false => 0,
             };
         }
 
-        $out = $this->date->clone()->setTime(...explode(':', $schedule->timetable['p4']));
+        $out = $date->clone()->setTime(...explode(':', $schedule->timetable['p4']));
 
         $check = array_intersect_key(array_flip($punches), collect($roster)->reject(fn ($punch) => isset($punch['missed']))->toArray());
 
-        $regular = $this->date->isWeekday() && $holiday->isEmpty();
+        $regular = $date->isWeekday() && $holiday->isEmpty();
 
         $undertime = array_sum(array_column($roster, 'undertime'));
 
@@ -199,21 +172,21 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
         ]);
     }
 
-    protected function shift(Schedule $schedule, Timetable $timetable)
+    protected function shift(Employee $employee, Carbon $date, Schedule $schedule, Timetable $timetable): void
     {
         $p1 = $schedule->pivot->timetable['p1']['time'];
 
         $p2 = $schedule->pivot->timetable['p2']['time'];
 
-        $timelogs = $this->employee->timelogs()
+        $timelogs = $employee->timelogs()
             ->whereBetween('time', [
-                $this->date->clone()->setTime(...explode(':', $p1))->subMinutes((int) $schedule->threshold['p1']['min']),
-                $this->date->clone()->addDays($p1 > $p2 ? 1 : 0)->setTime(...explode(':', $p2))->addMinutes((int) $schedule->threshold['p2']['max']),
+                $date->clone()->setTime(...explode(':', $p1))->subMinutes((int) $schedule->threshold['p1']['min']),
+                $date->clone()->addDays($p1 > $p2 ? 1 : 0)->setTime(...explode(':', $p2))->addMinutes((int) $schedule->threshold['p2']['max']),
             ])
             ->with('scanner')
             ->get();
 
-        $holiday = Holiday::search($this->date);
+        $holiday = Holiday::search($date);
 
         if ($timelogs->isEmpty()) {
             $timetable->delete();
@@ -224,7 +197,7 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
         $roster = [];
 
         foreach (['p1', 'p2'] as $state) {
-            $punchTime = $this->date->clone()->addDays($state === 'p2' && $p1 > $p2 ? 1 : 0)->setTime(...explode(':', $schedule->pivot->timetable[$state]['time']));
+            $punchTime = $date->clone()->addDays($state === 'p2' && $p1 > $p2 ? 1 : 0)->setTime(...explode(':', $schedule->pivot->timetable[$state]['time']));
 
             $timelists = $timelogs->reject(fn ($punch) => in_array($punch->id, array_column($roster, 'id')))
                 ->filter(fn ($punch) => ((int) $punchTime->diffInMinutes($punch->time)) <= ($schedule->threshold[$state]['max'] ?? INF))
@@ -253,11 +226,11 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
                 'recast' => $punched->recast,
             ];
 
-            if ($state === 'p1' && $punched->time->clone()->addDay()->isSameDay($this->date)) {
+            if ($state === 'p1' && $punched->time->clone()->addDay()->isSameDay($date)) {
                 $roster[$schedule->pivot->timetable[$state]['alias']]['previous'] = 1;
             }
 
-            if ($state === 'p2' && $punched->time->clone()->subDay()->isSameDay($this->date)) {
+            if ($state === 'p2' && $punched->time->clone()->subDay()->isSameDay($date)) {
                 $roster[$schedule->pivot->timetable[$state]['alias']]['next'] = 1;
             }
 
@@ -278,9 +251,9 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
 
         $check = array_intersect_key(array_flip(array_column($schedule->pivot->timetable, 'alias')), $roster);
 
-        $regular = $this->date->isWeekday() && $holiday->isEmpty();
+        $regular = $date->isWeekday() && $holiday->isEmpty();
 
-        $out = $this->date->clone()->setTime(...explode(':', $p2));
+        $out = $date->clone()->setTime(...explode(':', $p2));
 
         $undertime = array_sum(array_column($roster, 'undertime'));
 
@@ -289,8 +262,8 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
 
             $overtime = $excess > ($schedule->threshold['overtime'] ?? INF) ? (int) ($excess / 60) * 60 : 0;
         } elseif (isset($roster['p1']['time']) && isset($roster['p2']['time'])) {
-            $overtime = ($ot = $this->date->clone()->setTime(...explode(':', $p1))
-                ->diffInMinutes($this->date->clone()->setTime(...explode(':', $p2)), false) -
+            $overtime = ($ot = $date->clone()->setTime(...explode(':', $p1))
+                ->diffInMinutes($date->clone()->setTime(...explode(':', $p2)), false) -
                     $undertime) > $schedule->timetable['duration'] * 60 ? (int) ($ot / 60) * 60 : $ot;
         } else {
             $overtime = 0;
@@ -310,3 +283,4 @@ class ProcessTimetable implements ShouldBeEncrypted, ShouldBeUnique, ShouldQueue
         ]);
     }
 }
+

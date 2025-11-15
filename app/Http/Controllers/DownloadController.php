@@ -24,7 +24,9 @@ class DownloadController extends Controller
 
         return response()->streamDownload(function () use ($export) {
             echo $export->content;
-        }, pathinfo($export->filename, PATHINFO_BASENAME));
+        }, pathinfo($export->filename, PATHINFO_BASENAME), [
+            'Content-Type' => $export->mimetype ?? 'application/pdf',
+        ]);
     }
 
     public function attachment(Attachment $attachment, Request $request)

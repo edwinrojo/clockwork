@@ -142,7 +142,7 @@ class ExportTimesheetAction extends BulkAction
             return Notification::make()
                 ->danger()
                 ->title($message)
-                ->body('Please try again later')
+                ->body($exception->getMessage())
                 ->send();
         } catch (Exception $exception) {
             if ($exception instanceof $actionException) {
