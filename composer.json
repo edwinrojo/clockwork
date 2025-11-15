@@ -20,7 +20,7 @@
         "laravel/folio": "^1.1",
         "laravel/framework": "^11.0",
         "laravel/horizon": "^5.29",
-        "laravel/octane": "^2.3",
+        "laravel/octane": "^2.13",
         "laravel/pail": "^1.1",
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
@@ -82,6 +82,10 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan octane:start --watch --task-workers=12 --host=0.0.0.0 --port=8000\" \"php artisan horizon\" \"php artisan reverb:start\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,horizon,reverb,pail,vite"
         ]
     },
     "extra": {
