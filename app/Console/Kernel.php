@@ -12,15 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('dump:database')->monthly();
-
         $schedule->command('auth:clear-resets')->everyFifteenMinutes();
 
         $schedule->command('model:prune')->everyMinute();
-
-        if ($this->app->environment('local')) {
-            $schedule->command('telescope:prune')->hourly();
-        }
     }
 
     /**

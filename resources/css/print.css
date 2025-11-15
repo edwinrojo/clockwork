@@ -3,11 +3,6 @@
         page-break-before: always;
     }
 
-    /* Hide telescope toolbar */
-    .sf-toolbar {
-        display: none !important;
-    }
-
     .hide-on-print {
         visibility: hidden !important;
     }

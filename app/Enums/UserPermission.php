@@ -7,7 +7,6 @@ use Filament\Support\Contracts\HasLabel;
 enum UserPermission: string implements HasLabel
 {
     case ACTIVITY = 'activity';
-    case BACKUP = 'backup';
     case EMPLOYEE = 'employee';
     case GROUP = 'group';
     case HOLIDAY = 'holiday';
@@ -25,7 +24,6 @@ enum UserPermission: string implements HasLabel
     {
         return match ($this) {
             self::ACTIVITY => 'Activity',
-            self::BACKUP => 'Backup',
             self::EMPLOYEE => 'Employee',
             self::GROUP => 'Group',
             self::HOLIDAY => 'Holiday',

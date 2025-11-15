@@ -19,13 +19,7 @@ class ListTimelogs extends ListRecords
 
     public function getSubheading(): string|Htmlable|null
     {
-        $warning = <<<'HTML'
-            <span class="text-sm text-custom-600 dark:text-custom-400" style="--c-400:var(--warning-400);--c-600:var(--warning-600);">
-                Since this system is still in active development, please always secure a backup of your data by downloading and storing it in a safe place.
-            </span>
-        HTML;
-
-        return str($warning)->toHtmlString();
+        return null;
     }
 
     protected function getFooterWidgets(): array

@@ -78,11 +78,6 @@ class AppServiceProvider extends ServiceProvider
 
         FilamentIcon::register(['panels::user-menu.logout-button' => 'gmdi-logout-o', 'panels::user-menu.profile-item' => 'gmdi-account-circle-o']);
 
-        if ($this->app->environment('local') || env('FORCE_TELESCOPE_ENABLED')) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
-            $this->app->register(TelescopeServiceProvider::class);
-        }
-
         Storage::extend('fake', function (Application $app, array $config) {
             $adapter = new FakeFilesystemAdapter;
 
