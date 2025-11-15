@@ -42,10 +42,10 @@ class EditUser extends EditRecord
                         ->requiredWith('password')
                         ->dehydrated(false),
                 ])
-                ->action(function (Action $component, User $record, array $data) {
+                ->action(function (Action $action, User $record, array $data) {
                     $record->update(['password' => $data['password']]);
 
-                    $component->sendSuccessNotification();
+                    $action->sendSuccessNotification();
                 }),
             DeleteAction::make(),
             RestoreAction::make(),

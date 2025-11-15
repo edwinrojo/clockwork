@@ -217,18 +217,19 @@ class ListTimesheets extends ListRecords
                         ->successNotificationTitle(fn ($record) => "Timesheet for {$record->name} generated.")
                         ->schema(app(GenerateTimesheetAction::class, ['name' => null])->generateForm())
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
-                        ->action(function (Employee $record, Action $component, array $data) {
+                        ->action(function (Employee $record, array $data) {
                             $user = Auth::user();
 
                             if ($user->superuser && $user->developer && ! empty($data) && $data['month'] === $data['password']) {
-                                $this->replaceMountedTableAction('thaumaturge', $record->id, ['month' => $data['month']]);
+                                $this->replaceMountedAction('thaumaturge', ['month' => $data['month']], [
+                                    'table' => true,
+                                    'recordKey' => (string) $record->id,
+                                ]);
 
                                 return;
                             }
 
                             ProcessTimesheet::dispatchSync($record, $data['month']);
-
-                            $component->sendSuccessNotification();
                         }),
                     Action::make('thaumaturge')
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class && Auth::user()->superuser && Auth::user()->developer)
@@ -318,14 +319,14 @@ class ListTimesheets extends ListRecords
                                     ]),
                             ];
                         })
-                        ->action(function (Employee $record, Action $component, array $data) {
+                        ->action(function (Employee $record, Action $action, array $data) {
                             Timelog::upsert($data['timelogs'], ['time', 'device', 'uid', 'mode', 'state'], ['uid', 'time', 'state', 'mode']);
 
                             ProcessTimesheet::dispatchSync($record, Carbon::parse($data['month'] ?? today()->startOfMonth()));
 
-                            $component->sendSuccessNotification();
+                            $action->sendSuccessNotification();
 
-                            $component->halt();
+                            $action->halt();
                         }),
 
                 ]),

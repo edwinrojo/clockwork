@@ -376,13 +376,13 @@ class ViewTimesheet extends ViewRecord
                     $record->timesheets()->where('span', '1st')->exists() &&
                     $record->timesheets()->where('span', '2nd')->exists();
             })
-            ->action(function (Action $component, array $data) {
+            ->action(function (Action $action, array $data) {
                 CertifyTimesheets::dispatch([$this->record->id], 'employee', Auth::id(), [
                     'period' => $data['period'],
                     'accomplishment' => base64_encode($data['accomplishment']->get()),
                 ]);
 
-                $component->sendSuccessNotification();
+                $action->sendSuccessNotification();
             })
             ->schema([
                 Tabs::make()
@@ -556,7 +556,7 @@ class ViewTimesheet extends ViewRecord
                             ]),
                     ]),
             ])
-            ->action(function (Action $component, Timesheet $record, array $data) {
+            ->action(function (Action $action, Timesheet $record, array $data) {
                 $record->update($data);
             });
     }

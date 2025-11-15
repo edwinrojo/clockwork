@@ -53,10 +53,10 @@ class EditEmployee extends EditRecord
                         ->requiredWith('password')
                         ->dehydrated(false),
                 ])
-                ->action(function (Action $component, Employee $record, array $data) {
+                ->action(function (Action $action, Employee $record, array $data) {
                     $record->update(['password' => $data['password']]);
 
-                    $component->sendSuccessNotification();
+                    $action->sendSuccessNotification();
                 }),
             DeleteAction::make(),
             ForceDeleteAction::make(),

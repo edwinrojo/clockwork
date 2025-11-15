@@ -123,7 +123,7 @@ class CertifyTimesheetAction extends Action
             ];
         });
 
-        $this->action(function (Action $component, CertifyTimesheet $certifier, Timesheet $timesheet, array $data) {
+        $this->action(function (Action $action, CertifyTimesheet $certifier, Timesheet $timesheet, array $data) {
             $certifier($timesheet, Auth::user(), $data, $this->level);
 
             $user = Auth::user();
@@ -140,7 +140,7 @@ class CertifyTimesheetAction extends Action
                 ->body(str($body)->toHtmlString())
                 ->sendToDatabase($timesheet->employee, true);
 
-            $component->sendSuccessNotification();
+            $action->sendSuccessNotification();
         });
     }
 }

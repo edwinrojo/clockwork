@@ -31,6 +31,8 @@ class ViewTimesheetAction extends BulkAction
     protected function setUp(): void
     {
         parent::setUp();
+        
+       $this->hidden(true); 
 
         if ($this->listing) {
             $this->extraAttributes(['class' => 'hidden']);

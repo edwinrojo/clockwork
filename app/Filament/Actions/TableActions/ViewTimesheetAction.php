@@ -145,7 +145,7 @@ class ViewTimesheetAction extends Action
 
             $this->form(app(ExportTimesheetAction::class, ['name' => 'ex'])->exportForm(preview: true, employee: true));
 
-            $this->action(fn ($record, $livewire, $data) => $livewire->replaceMountedTableAction('bulk-view-timesheet', $record->id, $data));
+            $this->action(fn ($record, $livewire, $data) => $livewire->replaceMountedAction('bulk-view-timesheet', $data, ['table' => true, 'recordKey' => (string) $record->id]));
         }
     }
 }
