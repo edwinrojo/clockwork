@@ -27,7 +27,7 @@ class SuperuserPanelProvider extends PanelProvider
             ->colors(['primary' => Color::Cyan])
             ->discoverResources(in: app_path('Filament/Superuser/Resources'), for: 'App\\Filament\\Superuser\\Resources')
             ->discoverPages(in: app_path('Filament/Superuser/Pages'), for: 'App\\Filament\\Superuser\\Pages')
-            ->pages([Dashboard::class])
+            // ->pages([Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Superuser/Widgets'), for: 'App\\Filament\\Superuser\\Widgets')
             ->middleware(Middleware::middlewares())
             ->authMiddleware([Authenticate::class])
