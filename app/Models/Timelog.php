@@ -39,15 +39,16 @@ class Timelog extends Model
         static::addGlobalScope('excludeMasked', fn (Builder $builder) => $builder->where('masked', false));
 
         static::addGlobalScope('excludeRecasted', function (Builder $builder) {
-            $builder->whereNot(function (Builder $builder) {
-                $builder->orWhereExists(function ($builder) {
-                    $builder->from('timelogs as sub')->whereColumn('sub.timelog_id', 'timelogs.id')->where('sub.recast', true);
-                });
-
-                $builder->orWhere(function ($builder) {
-                    $builder->where('recast', true)->whereNull('timelog_id');
-                });
-            });
+            $builder->leftJoin('timelogs as recasted', function ($join) {
+                $join->on('recasted.timelog_id', '=', 'timelogs.id')
+                     ->where('recasted.recast', '=', true);
+            })
+            ->whereNull('recasted.id')
+            ->where(function ($query) {
+                $query->where('timelogs.recast', '!=', true)
+                      ->orWhereNotNull('timelogs.timelog_id');
+            })
+            ->select('timelogs.*');
         });
     }
 

@@ -18,17 +18,13 @@ return new class extends Migration
             $table->string('uid')->index();
             $table->unsignedTinyInteger('mode');
             $table->unsignedTinyInteger('state');
-            $table->boolean('shadow')->index()->default(false);
-            $table->boolean('pseudo')->index()->default(false);
-            $table->boolean('masked')->index()->default(false);
+            $table->boolean('shadow')->default(false);
+            $table->boolean('pseudo')->default(false);
+            $table->boolean('masked')->default(false);
             $table->boolean('recast')->index()->default(false);
             $table->ulid('timelog_id')->index()->nullable();
 
             $table->unique(['device', 'uid', 'time', 'state', 'mode']);
-            $table->index(['device', 'shadow', 'masked']);
-            $table->index(['shadow', 'masked']);
-            $table->index(['timelog_id', 'recast']);
-            $table->index(['device', 'time']);
         });
 
         Schema::table('timelogs', function (Blueprint $table) {
