@@ -13,15 +13,15 @@ use Exception;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -67,7 +67,7 @@ class ExportAttendanceAction extends Action
 
         $this->closeModalByClickingAway(false);
 
-        $this->form($this->exportForm());
+        $this->schema($this->exportForm());
 
         $this->action(fn (array $data) => $this->exportAction($data));
     }
@@ -102,7 +102,7 @@ class ExportAttendanceAction extends Action
                 ->size($data['size'])
                 ->user(@$data['user'] ? User::find($data['user']) : user())
                 ->scope(
-                    Filament::getCurrentPanel()->getId() !== 'admin'
+                    Filament::getCurrentOrDefaultPanel()->getId() !== 'admin'
                         ? function (Builder $query) {
                             $user = user();
 
@@ -250,7 +250,7 @@ class ExportAttendanceAction extends Action
                                 ->dehydrateStateUsing(fn (Get $get, array $state) => ('App\Models\\'.ucfirst($get('by')))::find($state))
                                 ->validationAttribute(fn (Get $get) => $get('by') === 'office' ? 'offices' : 'groups')
                                 ->options(function (Get $get) {
-                                    $admin = Filament::getCurrentPanel()->getId() === 'admin';
+                                    $admin = Filament::getCurrentOrDefaultPanel()->getId() === 'admin';
 
                                     return ('App\Models\\'.ucfirst($get('by')))::query()
                                         ->when(! $admin, function (Builder $query) use ($get) {
@@ -286,7 +286,7 @@ class ExportAttendanceAction extends Action
                                         ->pluck($get('by') === 'office' ? 'code' : 'name', 'id');
                                 })
                                 ->getSearchResultsUsing(function (Get $get, string $search) {
-                                    $admin = Filament::getCurrentPanel()->getId() === 'admin';
+                                    $admin = Filament::getCurrentOrDefaultPanel()->getId() === 'admin';
 
                                     return ('App\Models\\'.ucfirst($get('by')))::query()
                                         ->when(! $admin, function ($query) use ($get) {

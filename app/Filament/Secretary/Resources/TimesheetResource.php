@@ -11,11 +11,12 @@ use App\Filament\Actions\TableActions\UpdateEmployeeAction;
 use App\Filament\Filters\ActiveFilter;
 use App\Filament\Filters\OfficeFilter;
 use App\Filament\Filters\StatusFilter;
-use App\Filament\Secretary\Resources\TimesheetResource\Pages;
+use App\Filament\Secretary\Resources\TimesheetResource\Pages\ListTimesheets;
 use App\Models\Employee;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +25,7 @@ class TimesheetResource extends Resource
 {
     protected static ?string $model = Employee::class;
 
-    protected static ?string $navigationIcon = 'gmdi-document-scanner-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-document-scanner-o';
 
     protected static ?string $navigationLabel = 'Timesheets';
 
@@ -32,7 +33,7 @@ class TimesheetResource extends Resource
 
     protected static ?string $modelLabel = 'Timesheets';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -44,10 +45,10 @@ class TimesheetResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('offices.code')
+                TextColumn::make('offices.code')
                     ->searchable()
                     ->formatStateUsing(function (Employee $record) {
                         $offices = $record->offices->map(function ($office) {
@@ -61,7 +62,7 @@ class TimesheetResource extends Resource
 
                         return str($offices)->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->limit(24)
                     ->getStateUsing(function (Employee $employee): string {
@@ -106,10 +107,10 @@ class TimesheetResource extends Resource
                     ->multiple()
                     ->preload(),
             ])
-            ->actions([
+            ->recordActions([
                 UpdateEmployeeAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 ViewTimesheetAction::make(listing: true),
                 ViewTimesheetAction::make()
                     ->label('View'),
@@ -144,7 +145,7 @@ class TimesheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimesheets::route('/'),
+            'index' => ListTimesheets::route('/'),
         ];
     }
 

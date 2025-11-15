@@ -14,7 +14,7 @@ class EmployeePolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser', 'manager' => $user?->hasPermission(UserPermission::EMPLOYEE) ?? false,
             'secretary' => true,
             default => false,

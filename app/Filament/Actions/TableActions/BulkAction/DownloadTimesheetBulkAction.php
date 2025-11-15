@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\TableActions\BulkAction;
 
 use App\Models\Timesheet;
-use Filament\Tables\Actions\BulkAction;
+use Filament\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 use ZipArchive;
 

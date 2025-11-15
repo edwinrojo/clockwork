@@ -4,24 +4,23 @@ namespace App\Filament\Auth;
 
 use App\Http\Responses\LoginResponse;
 use App\Models\Employee;
+use App\Models\Office;
 use App\Models\User;
 use App\Traits\CanSendEmailVerification;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Actions;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Wizard;
-use Filament\Forms\Components\Wizard\Step;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Request as HttpRequest;
@@ -33,7 +32,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
-class Login extends \Filament\Pages\Auth\Login
+class Login extends \Filament\Auth\Pages\Login
 {
     use CanSendEmailVerification;
 
@@ -41,7 +40,7 @@ class Login extends \Filament\Pages\Auth\Login
 
     protected static string $layout = 'filament-panels::components.layout.base';
 
-    protected static string $view = 'filament.auth.login';
+    protected string $view = 'filament.auth.login';
 
     public function mount(): void
     {
@@ -117,7 +116,7 @@ class Login extends \Filament\Pages\Auth\Login
 
         if (
             ($user instanceof FilamentUser) &&
-            (! $user->canAccessPanel(Filament::getCurrentPanel()))
+            (! $user->canAccessPanel(Filament::getCurrentOrDefaultPanel()))
         ) {
             Filament::auth()->logout();
 
@@ -250,10 +249,10 @@ class Login extends \Filament\Pages\Auth\Login
             ->extraAttributes(['tabindex' => 7]);
     }
 
-    protected function getAccountSetupAction(): FormAction
+    protected function getAccountSetupAction(): Action
     {
         $lacking = function ($employee, $fail = null, $message = '', $boolean = true) {
-            $employee = $employee instanceof \App\Models\Employee ? $employee : \App\Models\Employee::find($employee);
+            $employee = $employee instanceof Employee ? $employee : Employee::find($employee);
 
             $lacking = $employee?->offices->isEmpty() || empty($employee?->birthdate) || empty($employee?->sex);
 
@@ -271,7 +270,7 @@ class Login extends \Filament\Pages\Auth\Login
                 return false;
             }
 
-            $employee = \App\Models\Employee::find($data[0]);
+            $employee = Employee::find($data[0]);
 
             if (is_null($fail) && is_null($employee)) {
                 return false;
@@ -294,7 +293,7 @@ class Login extends \Filament\Pages\Auth\Login
             }
         };
 
-        $action = FormAction::make('Setup Account')
+        $action = Action::make('Setup Account')
             ->visible(empty($this->verification))
             ->successNotificationTitle('Account setup successful')
             ->requiresConfirmation()
@@ -307,7 +306,7 @@ class Login extends \Filament\Pages\Auth\Login
             ->extraAttributes(['tabindex' => 4])
             ->slideOver()
             ->disabled(fn (Get $get) => $get('login_as') !== 'employee')
-            ->form([
+            ->schema([
                 Wizard::make([
                     Step::make('Confirmation')
                         ->description('Confirm your identity')
@@ -320,7 +319,7 @@ class Login extends \Filament\Pages\Auth\Login
                                 ->reactive()
                                 ->afterStateUpdated(fn (Set $set) => $set('password', null))
                                 ->getSearchResultsUsing(function (string $search) {
-                                    return \App\Models\Employee::query()
+                                    return Employee::query()
                                         ->where('name', 'ilike', "%$search%")
                                         ->orWhere('full_name', 'ilike', "%$search%")
                                         ->pluck('name', 'id')
@@ -359,7 +358,7 @@ class Login extends \Filament\Pages\Auth\Login
                                 ->required()
                                 ->searchable()
                                 ->getSearchResultsUsing(function (string $search) {
-                                    return \App\Models\Office::query()
+                                    return Office::query()
                                         ->where('name', 'ilike', "%$search%")
                                         ->orWhere('code', 'ilike', "%$search%")
                                         ->pluck('code', 'id')
@@ -382,7 +381,7 @@ class Login extends \Filament\Pages\Auth\Login
                                 ->label('New Password')
                                 ->validationAttribute('new password')
                                 ->password()
-                                ->visible(fn (Get $get) => \App\Models\Employee::find($get('employee'))?->password === null)
+                                ->visible(fn (Get $get) => Employee::find($get('employee'))?->password === null)
                                 ->same('password_confirmation')
                                 ->markAsRequired()
                                 ->rule('required')
@@ -391,14 +390,14 @@ class Login extends \Filament\Pages\Auth\Login
                             TextInput::make('password_confirmation')
                                 ->label('Confirm password')
                                 ->password()
-                                ->visible(fn (Get $get) => \App\Models\Employee::find($get('employee'))?->password === null)
+                                ->visible(fn (Get $get) => Employee::find($get('employee'))?->password === null)
                                 ->markAsRequired()
                                 ->rule('required'),
                         ]),
                 ]),
             ])
-            ->action(function (Actions\Action $action, array $data) {
-                $employee = \App\Models\Employee::find($data['employee']);
+            ->action(function (Action $action, array $data) {
+                $employee = Employee::find($data['employee']);
 
                 $data = array_filter(['email' => $data['email'], 'password' => $data['password'] ?? null]);
 

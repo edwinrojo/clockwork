@@ -14,7 +14,7 @@ class HolidayPolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser', 'manager' => $user?->hasPermission(UserPermission::HOLIDAY) ?? false,
             'secretary' => true,
             default => false,

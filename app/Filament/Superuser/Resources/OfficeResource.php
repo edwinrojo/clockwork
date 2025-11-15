@@ -3,18 +3,32 @@
 namespace App\Filament\Superuser\Resources;
 
 use App\Enums\UserRole;
-use App\Filament\Superuser\Resources\OfficeResource\Pages;
+use App\Filament\Superuser\Resources\OfficeResource\Pages\CreateOffice;
+use App\Filament\Superuser\Resources\OfficeResource\Pages\EditOffice;
+use App\Filament\Superuser\Resources\OfficeResource\Pages\ListOffices;
 use App\Filament\Superuser\Resources\OfficeResource\RelationManagers\EmployeesRelationManager;
 use App\Filament\Superuser\Resources\OfficeResource\RelationManagers\UsersRelationManager;
 use App\Models\Employee;
 use App\Models\Office;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -24,7 +38,7 @@ class OfficeResource extends Resource
 {
     protected static ?string $model = Office::class;
 
-    protected static ?string $navigationIcon = 'gmdi-corporate-fare-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-corporate-fare-o';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -32,33 +46,33 @@ class OfficeResource extends Resource
     {
         $self = @debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['class'] === get_called_class();
 
-        $panel = Filament::getCurrentPanel()->getId();
+        $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
         return [
-            Forms\Components\Section::make('General information')
+            Section::make('General information')
                 ->columns(5)
                 ->schema([
-                    Forms\Components\FileUpload::make('logo')
+                    FileUpload::make('logo')
                         ->helperText('The office\'s official logo.')
                         ->visibility('public')
                         ->getUploadedFileNameForStorageUsing(fn ($file, $get) => 'offices/'.mb_strtolower($get('code')).'.'.$file->extension())
                         ->imageEditor()
                         ->avatar()
                         ->maxSize(2048),
-                    Forms\Components\Group::make([
-                        Forms\Components\TextInput::make('name')
+                    Group::make([
+                        TextInput::make('name')
                             ->required()
                             ->helperText('The full expanded name of the office.'),
-                        Forms\Components\TextInput::make('code')
+                        TextInput::make('code')
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->helperText('The shorthand name of the office.'),
                     ])->columnSpan(4),
                 ]),
-            Forms\Components\Section::make('Office head')
+            Section::make('Office head')
                 ->hiddenOn(['create'])
                 ->schema([
-                    Forms\Components\Select::make('head')
+                    Select::make('head')
                         ->relationship('head', 'full_name', fn ($query, $record) => $query->whereHas('offices', fn ($q) => $q->where('offices.id', $record?->id)))
                         ->searchable()
                         ->preload()
@@ -89,61 +103,61 @@ class OfficeResource extends Resource
         ];
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::formSchema());
+        return $schema->schema(static::formSchema());
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('code')
+                TextColumn::make('code')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('employees_count')
+                TextColumn::make('employees_count')
                     ->label('Employees')
                     ->counts('employees')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('Set active state')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('Set active state')
                         ->color('warning')
                         ->requiresConfirmation()
                         ->groupedIcon('heroicon-o-check-circle')
-                        ->form([
-                            Forms\Components\Section::make([
-                                Forms\Components\Radio::make('active')
+                        ->schema([
+                            Section::make([
+                                Radio::make('active')
                                     ->boolean()
                                     ->inline()
                                     ->inlineLabel(false)
                                     ->required(),
                             ]),
                         ])
-                        ->action(function (Tables\Actions\BulkAction $action, Collection $records, array $data) {
+                        ->action(function (BulkAction $action, Collection $records, array $data) {
                             $records->toQuery()->update(['active' => $data['active']]);
 
                             $action->deselectRecordsAfterCompletion();
@@ -156,9 +170,9 @@ class OfficeResource extends Resource
                                 ->body($records->count()." $label has been set to ".($data['active'] ? 'active' : 'inactive').'.')
                                 ->send();
                         }),
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->deferLoading()
@@ -176,9 +190,9 @@ class OfficeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListOffices::route('/'),
-            'create' => Pages\CreateOffice::route('/create'),
-            'edit' => Pages\EditOffice::route('/{record}/edit'),
+            'index' => ListOffices::route('/'),
+            'create' => CreateOffice::route('/create'),
+            'edit' => EditOffice::route('/{record}/edit'),
         ];
     }
 

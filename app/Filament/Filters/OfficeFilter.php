@@ -29,11 +29,11 @@ class OfficeFilter extends Filter
     {
         parent::setUp();
 
-        $this->form([
+        $this->schema([
             Select::make('offices')
                 ->options(
                     Office::query()
-                        ->when(Filament::getCurrentPanel()->getId() === 'secretary', function (Builder $query) {
+                        ->when(Filament::getCurrentOrDefaultPanel()->getId() === 'secretary', function (Builder $query) {
                             $query->where(function ($query) {
                                 $user = user();
 
@@ -60,7 +60,7 @@ class OfficeFilter extends Filter
 
                     $query = Office::query();
 
-                    $query->when(Filament::getCurrentPanel()->getId() === 'secretary', function ($query) use ($user) {
+                    $query->when(Filament::getCurrentOrDefaultPanel()->getId() === 'secretary', function ($query) use ($user) {
                         $query->where(function ($query) use ($user) {
                             $query->whereIn('id', $user->offices()->select('offices.id'));
 

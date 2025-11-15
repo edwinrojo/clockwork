@@ -7,7 +7,7 @@ use Filament\Pages\Dashboard as Home;
 
 class Dashboard extends Home
 {
-    protected static ?string $navigationIcon = 'gmdi-home-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-home-o';
 
     protected function getHeaderActions(): array
     {

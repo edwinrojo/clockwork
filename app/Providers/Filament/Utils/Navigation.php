@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament\Utils;
 
+use Closure;
 use Filament\Facades\Filament;
 use Filament\Navigation\MenuItem;
 
@@ -9,7 +10,7 @@ class Navigation
 {
     public static function menuItems(): array
     {
-        $visibility = fn (string $panel = 'app') => request()->user()->canAccessPanel(Filament::getCurrentPanel(), $panel);
+        $visibility = fn (string $panel = 'app') => request()->user()->canAccessPanel(Filament::getCurrentOrDefaultPanel(), $panel);
 
         return [
             // MenuItem::make('app')
@@ -65,7 +66,7 @@ class Navigation
         ];
     }
 
-    public static function spaExceptions(): \Closure
+    public static function spaExceptions(): Closure
     {
         return function (): array {
             $routes = [
@@ -81,7 +82,7 @@ class Navigation
             ];
 
             return collect($routes)
-                ->reject(fn ($route) => str($route)->contains(Filament::getCurrentPanel()->getId()))
+                ->reject(fn ($route) => str($route)->contains(Filament::getCurrentOrDefaultPanel()->getId()))
                 ->toArray();
         };
     }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ScannerStatisticsWidget extends BaseWidget
 {
-    protected static ?string $pollingInterval = '45s';
+    protected ?string $pollingInterval = '45s';
 
     protected function getStats(): array
     {

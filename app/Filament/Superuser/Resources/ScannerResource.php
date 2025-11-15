@@ -4,16 +4,31 @@ namespace App\Filament\Superuser\Resources;
 
 use App\Filament\Actions\TableActions\FetchAction;
 use App\Filament\Filters\ActiveFilter;
-use App\Filament\Superuser\Resources\ScannerResource\Pages;
+use App\Filament\Superuser\Resources\ScannerResource\Pages\CreateScanner;
+use App\Filament\Superuser\Resources\ScannerResource\Pages\EditScanner;
+use App\Filament\Superuser\Resources\ScannerResource\Pages\ListScanners;
 use App\Filament\Superuser\Resources\ScannerResource\RelationManagers\EmployeesRelationManager;
 use App\Filament\Superuser\Resources\ScannerResource\RelationManagers\UsersRelationManager;
 use App\Models\Scanner;
 use App\Models\Scopes\ActiveScope;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -23,36 +38,36 @@ class ScannerResource extends Resource
 {
     protected static ?string $model = Scanner::class;
 
-    protected static ?string $navigationIcon = 'gmdi-touch-app-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-touch-app-o';
 
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function formSchema(): array
     {
         return [
-            Forms\Components\Section::make('Scanner Details')
+            Section::make('Scanner Details')
                 ->columns()
                 ->schema([
-                    Forms\Components\ToggleButtons::make('priority')
+                    ToggleButtons::make('priority')
                         ->required()
                         ->boolean()
                         ->grouped()
                         ->inline()
                         ->default(false)
                         ->helperText('Prioritized scanners have higher precedence over others.'),
-                    Forms\Components\ToggleButtons::make('active')
+                    ToggleButtons::make('active')
                         ->required()
                         ->boolean()
                         ->grouped()
                         ->inline()
                         ->default(false)
                         ->helperText('Inactive scanners will be ignored.'),
-                    Forms\Components\TextInput::make('name')
+                    TextInput::make('name')
                         ->required()
                         ->alphaDash()
                         ->unique(ignoreRecord: true)
                         ->dehydrateStateUsing(fn (string $state): ?string => mb_strtolower($state)),
-                    Forms\Components\TextInput::make('uid')
+                    TextInput::make('uid')
                         ->hint('Device ID')
                         ->label('UID')
                         ->validationAttribute('uid')
@@ -62,107 +77,107 @@ class ScannerResource extends Resource
                         ->rules(['required', 'min:2', 'max:255'])
                         ->markAsRequired()
                         ->dehydrateStateUsing(fn (?string $state): ?int => (int) $state),
-                    Forms\Components\Textarea::make('remarks')
+                    Textarea::make('remarks')
                         ->columnSpanFull(),
                 ]),
-            Forms\Components\Section::make('Printout Configuration')
+            Section::make('Printout Configuration')
                 ->columns()
                 ->schema([
-                    Forms\Components\ColorPicker::make('print.foreground_color')
+                    ColorPicker::make('print.foreground_color')
                         ->rgba()
                         ->label('Foreground Color')
                         ->default('rgba(0, 0, 0, 1)')
                         ->helperText('The color of the text in the printout.'),
-                    Forms\Components\ColorPicker::make('print.background_color')
+                    ColorPicker::make('print.background_color')
                         ->rgba()
                         ->label('Background Color')
                         ->default('rgba(0, 0, 0, 0)')
                         ->helperText('The color of the background in the printout.'),
                 ]),
-            Forms\Components\Section::make('Connection Parameters')
+            Section::make('Connection Parameters')
                 ->columns(3)
                 ->visible(! config('app.remote.server') ?: config('app.remote.host') && config('app.remote.key') && config('app.remote.token') && config('app.remote.user'))
                 ->schema([
-                    Forms\Components\TextInput::make('host')
+                    TextInput::make('host')
                         ->unique(ignoreRecord: true)
                         ->requiredWith('port')
                         ->helperText('The hostname or IP address of the scanner.'),
-                    Forms\Components\TextInput::make('port')
+                    TextInput::make('port')
                         ->numeric()
                         ->type('text')
                         ->helperText('The port number of the scanner.'),
-                    Forms\Components\TextInput::make('pass')
+                    TextInput::make('pass')
                         ->password()
                         ->helperText('The password of the scanner.'),
                 ]),
         ];
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::formSchema());
+        return $schema->schema(static::formSchema());
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('uid')
+                TextColumn::make('uid')
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->placeholder('<blank>')
                     ->label('UID')
                     ->sortable(query: fn ($query, $direction) => $query->orderByRaw("CAST(uid as INT) $direction"))
                     ->searchable(query: fn ($query, $search) => $query->whereRaw("CAST(uid as TEXT) = '$search'")),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('employees_count')
+                TextColumn::make('employees_count')
                     ->label('Employees')
                     ->counts(['employees' => fn ($query) => $query->where('enrollment.active', true)])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('timelogs_count')
+                TextColumn::make('timelogs_count')
                     ->label('Timelogs')
                     ->counts('timelogs')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 ActiveFilter::make(),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
+            ->recordActions([
                 // Tables\Actions\ActionGroup::make([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
                 FetchAction::make(),
                 // ]),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('Set active state')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('Set active state')
                         ->color('warning')
                         ->requiresConfirmation()
                         ->groupedIcon('heroicon-o-check-circle')
-                        ->form([
-                            Forms\Components\Section::make([
-                                Forms\Components\Radio::make('active')
+                        ->schema([
+                            Section::make([
+                                Radio::make('active')
                                     ->boolean()
                                     ->inline()
                                     ->inlineLabel(false)
                                     ->required(),
                             ]),
                         ])
-                        ->action(function (Tables\Actions\BulkAction $action, Collection $records, array $data) {
+                        ->action(function (BulkAction $action, Collection $records, array $data) {
                             $records->toQuery()->update(['active' => $data['active']]);
 
                             $action->deselectRecordsAfterCompletion();
@@ -175,9 +190,9 @@ class ScannerResource extends Resource
                                 ->body($records->count()." $label has been set to ".($data['active'] ? 'active' : 'inactive').'.')
                                 ->send();
                         }),
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->recordUrl(null)
@@ -202,9 +217,9 @@ class ScannerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListScanners::route('/'),
-            'create' => Pages\CreateScanner::route('/create'),
-            'edit' => Pages\EditScanner::route('/{record}/edit'),
+            'index' => ListScanners::route('/'),
+            'create' => CreateScanner::route('/create'),
+            'edit' => EditScanner::route('/{record}/edit'),
         ];
     }
 

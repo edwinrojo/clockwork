@@ -3,11 +3,12 @@
 namespace App\Forms\Components;
 
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Illuminate\Database\Eloquent\Collection;
 
 class TimesheetOption extends CheckboxList
 {
-    use \Filament\Forms\Components\Concerns\HasExtraInputAttributes;
+    use HasExtraInputAttributes;
 
     public ?Collection $timesheets = null;
 

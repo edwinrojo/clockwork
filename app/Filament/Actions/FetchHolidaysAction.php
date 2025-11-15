@@ -4,6 +4,7 @@ namespace App\Filament\Actions;
 
 use App\Actions\FetchHolidays;
 use App\Models\Holiday;
+use Exception;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -23,7 +24,7 @@ class FetchHolidaysAction extends Action
 
         $this->modalDescription('Fetch holidays from an external API. This will only fetch national holidays in the Philippines for the specified year.');
 
-        $this->form([
+        $this->schema([
             TextInput::make('year')
                 ->label('Year')
                 ->default(now()->year)
@@ -37,7 +38,7 @@ class FetchHolidaysAction extends Action
                 $response = $fetcher($data['year']);
 
                 if (is_null($response)) {
-                    throw new \Exception('External api response returned null.');
+                    throw new Exception('External api response returned null.');
                 }
 
                 $holidays = collect($response)->map(function ($holiday) {
@@ -49,7 +50,7 @@ class FetchHolidaysAction extends Action
                         'created_by' => Auth::id(),
                     ];
                 })->toArray();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Notification::make()
                     ->danger()
                     ->title('Failed to fetch holidays')

@@ -4,10 +4,18 @@ namespace App\Filament\Superuser\Resources\ScannerResource\RelationManagers;
 
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Enrollment;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -18,11 +26,11 @@ class EmployeesRelationManager extends RelationManager
 
     protected static ?string $title = 'Employee Enrollment';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('employee_id')
+        return $schema
+            ->components([
+                Select::make('employee_id')
                     ->relationship('employee', 'full_name')
                     ->preload()
                     ->searchable()
@@ -35,18 +43,18 @@ class EmployeesRelationManager extends RelationManager
                             ->where('scanner_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\TextInput::make('uid')
+                TextInput::make('uid')
                     ->markAsRequired()
                     ->label('UID')
                     ->rules('required')
                     ->maxLength(255)
                     ->validationAttribute('UID')
                     ->rules([
-                        fn (Forms\Get $get) => Rule::unique('enrollment', 'uid')
+                        fn (Get $get) => Rule::unique('enrollment', 'uid')
                             ->where('scanner_id', $this->ownerRecord->id)
                             ->ignore($get('employee_id'), 'employee_id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
@@ -60,15 +68,15 @@ class EmployeesRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('employee', fn ($q) => $q->where('active', 1)))
             ->columns([
-                Tables\Columns\TextColumn::make('uid')
+                TextColumn::make('uid')
                     ->label('UID')
                     ->sortable(query: fn ($query, $direction) => $query->orderByRaw("CAST(uid as INT) $direction"))
                     ->searchable(query: fn ($query, $search) => $query->where('uid', $search)),
-                Tables\Columns\TextColumn::make('employee.full_name')
+                TextColumn::make('employee.full_name')
                     ->label('Name')
                     ->placeholder(fn ($record) => $record->employee_id)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->getStateUsing(function (Enrollment $record): string {
                         return str($record->employee->status?->value)
@@ -77,7 +85,7 @@ class EmployeesRelationManager extends RelationManager
                                 return $status->append(" ({$record->employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -86,22 +94,22 @@ class EmployeesRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->createAnother(false)
                     ->slideOver()
                     ->modalWidth('xl'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation'),
                 ]),

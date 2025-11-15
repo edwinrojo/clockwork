@@ -4,11 +4,13 @@ namespace App\Filament\Actions\TableActions\BulkActionGroup;
 
 use App\Filament\Actions\TableActions\CertifyTimesheetAction;
 use App\Forms\Components\TimesheetOption;
+use App\Models\Employee;
 use App\Models\Timesheet;
+use App\Models\User;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,7 +36,7 @@ class VerifyTimesheetAction extends BulkActionGroup
     {
         parent::setUp();
 
-        $this->level = match (Filament::getCurrentPanel()->getId()) {
+        $this->level = match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'director' => 'head',
             'supervisor' => 'supervisor',
             'employee' => null,
@@ -66,7 +68,7 @@ class VerifyTimesheetAction extends BulkActionGroup
             ->failureNotificationTitle('Verification failed.')
             ->modalWidth('max-w-lg')
             ->closeModalByClickingAway()
-            ->form(function (Collection $records) use ($period) {
+            ->schema(function (Collection $records) use ($period) {
                 $records = $records->toQuery()
                     ->whereHas('exports', fn ($q) => $q->where('details->period', $period)->whereNull("details->verification->{$this->level}->at"))
                     ->get()
@@ -86,7 +88,7 @@ class VerifyTimesheetAction extends BulkActionGroup
                         ->markAsRequired()
                         ->accepted()
                         ->rule(fn () => function ($attribute, $value, $fail) {
-                            /** @var \App\Models\User|\App\Models\Employee */
+                            /** @var User|Employee */
                             $user = Auth::user();
 
                             if (empty($user->signature->certificate)) {

@@ -22,11 +22,26 @@ use App\Jobs\ProcessTimesheet;
 use App\Models\Employee;
 use App\Models\Schedule;
 use App\Models\Timelog;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Forms;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\View;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -72,10 +87,10 @@ class ListTimesheets extends ListRecords
         return $table
             ->query(fn () => ($this->filters['model'] ?? Employee::class)::query()->withoutGlobalScopes(['excludeInterns']))
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('offices.code')
+                TextColumn::make('offices.code')
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
                     ->searchable()
                     ->formatStateUsing(function (Employee $record) {
@@ -91,7 +106,7 @@ class ListTimesheets extends ListRecords
                         return str($offices)->toHtmlString();
                     })
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->limit(24)
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
@@ -102,29 +117,29 @@ class ListTimesheets extends ListRecords
                                 return $status->append(" ({$employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('groups.name')
+                TextColumn::make('groups.name')
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\Filter::make('status')
+                Filter::make('status')
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
-                    ->form([
-                        Forms\Components\Select::make('status')
+                    ->schema([
+                        Select::make('status')
                             ->options(EmploymentStatus::class)
                             ->placeholder('All')
                             ->multiple()
                             ->searchable(),
-                        Forms\Components\Select::make('substatus')
+                        Select::make('substatus')
                             ->visible(function (callable $get) {
                                 $visibleOn = [
                                     EmploymentStatus::CONTRACTUAL->value,
@@ -177,32 +192,32 @@ class ListTimesheets extends ListRecords
                         return $indicators;
                     }),
                 OfficeFilter::make(),
-                Tables\Filters\SelectFilter::make('groups')
+                SelectFilter::make('groups')
                     ->relationship('groups', 'name')
                     ->multiple()
                     ->preload(),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
+            ->recordActions([
+                ActionGroup::make([
                     UpdateEmployeeAction::make()
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class),
-                    Tables\Actions\Action::make('export')
+                    Action::make('export')
                         ->label('Export')
                         ->requiresConfirmation()
                         ->icon('heroicon-o-document-arrow-down')
                         ->modalIcon('heroicon-o-document-arrow-down')
                         ->modalDescription(fn (Employee $record) => "Export timesheet of {$record->name}")
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
-                        ->form(fn () => app(ExportTimesheetAction::class, ['name' => null])->exportForm())
+                        ->schema(fn () => app(ExportTimesheetAction::class, ['name' => null])->exportForm())
                         ->action(fn (Employee $record, array $data) => app(ExportTimesheetAction::class, ['name' => null])->exportAction($record, $data)),
-                    Tables\Actions\Action::make('generate')
+                    Action::make('generate')
                         ->icon('heroicon-o-bolt')
                         ->requiresConfirmation()
                         ->modalDescription(app(GenerateTimesheetAction::class, ['name' => null])->generateConfirmation())
                         ->successNotificationTitle(fn ($record) => "Timesheet for {$record->name} generated.")
-                        ->form(app(GenerateTimesheetAction::class, ['name' => null])->generateForm())
+                        ->schema(app(GenerateTimesheetAction::class, ['name' => null])->generateForm())
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
-                        ->action(function (Employee $record, Tables\Actions\Action $component, array $data) {
+                        ->action(function (Employee $record, Action $component, array $data) {
                             $user = Auth::user();
 
                             if ($user->superuser && $user->developer && ! empty($data) && $data['month'] === $data['password']) {
@@ -215,7 +230,7 @@ class ListTimesheets extends ListRecords
 
                             $component->sendSuccessNotification();
                         }),
-                    Tables\Actions\Action::make('thaumaturge')
+                    Action::make('thaumaturge')
                         ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class && Auth::user()->superuser && Auth::user()->developer)
                         ->extraAttributes(['class' => 'hidden'])
                         ->modalHeading(fn ($record) => $record->name)
@@ -226,7 +241,7 @@ class ListTimesheets extends ListRecords
                         ->modalWidth('3xl')
                         ->slideOver()
                         ->successNotificationTitle(fn ($record) => "Timesheet for {$record->name} generated.")
-                        ->form(function ($arguments, $record) {
+                        ->schema(function ($arguments, $record) {
                             $month = Carbon::parse($arguments['month']);
 
                             $from = $month->clone()->startOfMonth();
@@ -236,16 +251,16 @@ class ListTimesheets extends ListRecords
                             $this->timelogs = $record->timelogs()->whereBetween('time', [$from, $to])->withoutGlobalScopes()->get();
 
                             return [
-                                Forms\Components\TextInput::make('month')
+                                TextInput::make('month')
                                     ->default($month->format('Y-m'))
                                     ->hidden()
                                     ->dehydratedWhenHidden(),
-                                Forms\Components\Tabs::make()
+                                Tabs::make()
                                     // ->contained(false)
                                     ->tabs([
-                                        Forms\Components\Tabs\Tab::make('Timelogs')
+                                        Tab::make('Timelogs')
                                             ->schema([
-                                                Forms\Components\View::make('print.timelogs')
+                                                View::make('print.timelogs')
                                                     ->viewData([
                                                         'employee' => $record,
                                                         'timelogs' => $this->timelogs,
@@ -256,9 +271,9 @@ class ListTimesheets extends ListRecords
                                                         'action' => $this->action,
                                                     ]),
                                             ]),
-                                        Forms\Components\Tabs\Tab::make('New')
+                                        Tab::make('New')
                                             ->schema([
-                                                Forms\Components\Repeater::make('timelogs')
+                                                Repeater::make('timelogs')
                                                     ->hiddenLabel()
                                                     ->collapsible()
                                                     ->cloneable()
@@ -270,22 +285,22 @@ class ListTimesheets extends ListRecords
                                                         $scanners = $record->scanners()->whereNotNull('scanners.uid')->get();
 
                                                         return [
-                                                            Forms\Components\Select::make('device')
+                                                            Select::make('device')
                                                                 ->options($scanners->pluck('name', 'uid')->toArray())
                                                                 ->required()
-                                                                ->afterStateUpdated(function (int $state, Forms\Set $set) use ($scanners) {
+                                                                ->afterStateUpdated(function (int $state, Set $set) use ($scanners) {
                                                                     $set('uid', $scanners->first(fn ($scanner) => $scanner->uid === $state)?->pivot->uid);
                                                                 }),
-                                                            Forms\Components\DateTimePicker::make('time')
+                                                            DateTimePicker::make('time')
                                                                 ->distinct()
                                                                 ->required()
                                                                 ->minDate($from->format('Y-m-d H:i:s'))
                                                                 ->maxDate($to->format('Y-m-d H:i:s')),
-                                                            Forms\Components\Select::make('state')
+                                                            Select::make('state')
                                                                 ->options(TimelogState::class)
                                                                 ->default(TimelogState::CHECK_IN)
                                                                 ->required(),
-                                                            Forms\Components\Select::make('mode')
+                                                            Select::make('mode')
                                                                 ->options(function () {
                                                                     return collect(TimelogMode::cases())->mapWithKeys(fn ($mode) => [
                                                                         $mode->value => $mode->getLabel(true),
@@ -293,9 +308,9 @@ class ListTimesheets extends ListRecords
                                                                 })
                                                                 ->default(TimelogMode::FINGERPRINT_1)
                                                                 ->required(),
-                                                            Forms\Components\Hidden::make('pseudo')
+                                                            Hidden::make('pseudo')
                                                                 ->default(true),
-                                                            Forms\Components\Hidden::make('uid')
+                                                            Hidden::make('uid')
                                                                 ->default(null),
                                                         ];
                                                     }),
@@ -303,7 +318,7 @@ class ListTimesheets extends ListRecords
                                     ]),
                             ];
                         })
-                        ->action(function (Employee $record, Tables\Actions\Action $component, array $data) {
+                        ->action(function (Employee $record, Action $component, array $data) {
                             Timelog::upsert($data['timelogs'], ['time', 'device', 'uid', 'mode', 'state'], ['uid', 'time', 'state', 'mode']);
 
                             ProcessTimesheet::dispatchSync($record, Carbon::parse($data['month'] ?? today()->startOfMonth()));
@@ -315,7 +330,7 @@ class ListTimesheets extends ListRecords
 
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 ViewTimesheetAction::make(listing: true)
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class),
                 ViewTimesheetAction::make()
@@ -341,14 +356,14 @@ class ListTimesheets extends ListRecords
                 //     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
                 //     ->label('Export')
                 //     ->icon('heroicon-o-document-arrow-down'),
-                Tables\Actions\BulkAction::make('generate')
+                BulkAction::make('generate')
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class)
                     ->icon('heroicon-o-bolt')
                     ->color('gray')
                     ->requiresConfirmation()
                     ->modalIconColor('danger')
                     ->modalDescription(app(GenerateTimesheetAction::class, ['name' => null])->generateConfirmation())
-                    ->form(app(GenerateTimesheetAction::class, ['name' => null])->generateForm())
+                    ->schema(app(GenerateTimesheetAction::class, ['name' => null])->generateForm())
                     ->action(fn (Collection $records, array $data) => app(GenerateTimesheetAction::class, ['name' => null])->generateAction($records, $data)),
                 DeleteTimesheetAction::make('delete')
                     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class),

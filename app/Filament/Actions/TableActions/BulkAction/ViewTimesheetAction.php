@@ -4,8 +4,8 @@ namespace App\Filament\Actions\TableActions\BulkAction;
 
 use App\Models\Employee;
 use App\Models\Timesheet;
-use Filament\Forms\Components\View;
-use Filament\Tables\Actions\BulkAction;
+use Filament\Actions\BulkAction;
+use Filament\Schemas\Components\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 

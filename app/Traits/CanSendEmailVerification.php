@@ -3,8 +3,8 @@
 namespace App\Traits;
 
 use Exception;
+use Filament\Auth\Notifications\VerifyEmail;
 use Filament\Facades\Filament;
-use Filament\Notifications\Auth\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 

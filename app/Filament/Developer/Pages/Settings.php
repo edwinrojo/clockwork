@@ -5,11 +5,14 @@ namespace App\Filament\Developer\Pages;
 use App\Enums\UserRole;
 use App\Models\Setting;
 use Filament\Actions\Action;
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class Settings extends Page
 {
@@ -18,9 +21,9 @@ class Settings extends Page
 
     protected static ?int $navigationSort = PHP_INT_MAX;
 
-    protected static ?string $navigationIcon = 'gmdi-tune-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-tune-o';
 
-    protected static string $view = 'filament.superuser.pages.settings';
+    protected string $view = 'filament.superuser.pages.settings';
 
     protected ?string $subheading = 'This is global settings for the application.';
 
@@ -42,12 +45,12 @@ class Settings extends Page
         ];
     }
 
-    public function form(Forms\Form $form): Forms\Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
             ->schema([
-                Forms\Components\Section::make('Role Aliases')
+                Section::make('Role Aliases')
                     ->columns(5)
                     ->schema(
                         collect(UserRole::cases())
@@ -56,7 +59,7 @@ class Settings extends Page
                                 UserRole::NONE,
                             ]))
                             ->map(function (UserRole $role) {
-                                return Forms\Components\TextInput::make(mb_strtolower($role->getLabel(false)))
+                                return TextInput::make(mb_strtolower($role->getLabel(false)))
                                     ->columnSpan(2)
                                     ->label($role->getLabel(false))
                                     ->placeholder($role->getLabel(false))
@@ -65,11 +68,11 @@ class Settings extends Page
                             })
                             ->toArray(),
                     ),
-                Forms\Components\Section::make('Features')
+                Section::make('Features')
                     ->schema([
-                        Forms\Components\Toggle::make('requests')
+                        Toggle::make('requests')
                             ->helperText('Enable requests feature'),
-                        Forms\Components\Toggle::make('schedule')
+                        Toggle::make('schedule')
                             ->helperText('Enable schedule feature'),
                     ]),
             ]);

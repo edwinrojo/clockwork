@@ -4,9 +4,10 @@ namespace App\Filament\Validation\Resources\EmployeeResource\Pages;
 
 use App\Filament\Validation\Resources\EmployeeResource;
 use App\Models\Timesheet;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Url;
@@ -47,15 +48,15 @@ class PreviewTimesheet extends ViewRecord
         return $this->record->employee->name;
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Group::make()
+                Group::make()
                     ->columnSpanFull()
                     ->columns(12)
                     ->schema([
-                        Infolists\Components\TextEntry::make('timesheet')
+                        TextEntry::make('timesheet')
                             ->columnSpan(5)
                             ->formatStateUsing(function (): View {
                                 return view('filament.validation.pages.csc', [
@@ -64,7 +65,7 @@ class PreviewTimesheet extends ViewRecord
                                     'month' => false,
                                 ]);
                             }),
-                        Infolists\Components\TextEntry::make('timelogs')
+                        TextEntry::make('timelogs')
                             ->columnSpan(7)
                             ->formatStateUsing(function (): View {
                                 $month = Carbon::parse($this->record->month);
@@ -83,7 +84,7 @@ class PreviewTimesheet extends ViewRecord
                                 ]);
                             }),
                     ]),
-                Infolists\Components\TextEntry::make('scanners')
+                TextEntry::make('scanners')
                     ->columnSpanFull()
                     ->state(function () {
                         $scanners = $this->record->employee->scanners()
@@ -105,20 +106,20 @@ class PreviewTimesheet extends ViewRecord
                             ->wrap('<span>', '</span>')
                             ->toHtmlString();
                     }),
-                Infolists\Components\Group::make([
-                    Infolists\Components\TextEntry::make('days')
+                Group::make([
+                    TextEntry::make('days')
                         ->label('Days'),
-                    Infolists\Components\TextEntry::make('overtime')
+                    TextEntry::make('overtime')
                         ->label('Overtime')
                         ->state(function (Timesheet $record) {
                             return $record->getOvertime(true);
                         }),
-                    Infolists\Components\TextEntry::make('undertime')
+                    TextEntry::make('undertime')
                         ->label('Undertime')
                         ->state(function (Timesheet $record) {
                             return $record->getUndertime(true);
                         }),
-                    Infolists\Components\TextEntry::make('missed')
+                    TextEntry::make('missed')
                         ->label('Missed')
                         ->state(function (Timesheet $record) {
                             return $record->getMissed(true);

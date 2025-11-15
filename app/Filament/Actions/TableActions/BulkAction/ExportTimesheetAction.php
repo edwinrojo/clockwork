@@ -8,20 +8,20 @@ use App\Models\Timesheet;
 use App\Models\User;
 use App\Services\TimesheetExporter;
 use Exception;
+use Filament\Actions\BulkAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\BulkAction;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -231,7 +231,7 @@ class ExportTimesheetAction extends BulkAction
 
         $period = [
             Radio::make('format')
-                ->default(fn ($livewire) => $livewire->filters['format'] ?? (in_array(Filament::getCurrentPanel()->getId(), ['employee', 'director', 'manager']) ? 'csc' : 'default'))
+                ->default(fn ($livewire) => $livewire->filters['format'] ?? (in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['employee', 'director', 'manager']) ? 'csc' : 'default'))
                 ->required()
                 ->options([
                     'default' => 'Default format',
@@ -250,7 +250,7 @@ class ExportTimesheetAction extends BulkAction
                 ->required(),
             Select::make('period')
                 ->default(function (Employee|Timesheet|null $record, $livewire) {
-                    if (in_array(Filament::getCurrentPanel()->getId(), ['director', 'manager'])) {
+                    if (in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'manager'])) {
                         return $record->certified['full'] ? 'full' : ($record->certified['1st'] ? '1st' : '2nd');
                     }
 
@@ -259,7 +259,7 @@ class ExportTimesheetAction extends BulkAction
                 ->required()
                 ->reactive()
                 ->options(function () {
-                    if (in_array(Filament::getCurrentPanel()->getId(), ['director', 'manager'])) {
+                    if (in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'manager'])) {
                         return [
                             'full' => 'Full month',
                             '1st' => 'First half',
@@ -278,7 +278,7 @@ class ExportTimesheetAction extends BulkAction
                     ];
                 })
                 ->disableOptionWhen(function (Employee|Timesheet|null $record, Get $get, ?string $value) {
-                    if (in_array(Filament::getCurrentPanel()->getId(), ['director', 'manager'])) {
+                    if (in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'manager'])) {
                         return match ($value) {
                             'full' => ! $record->certified['full'],
                             '1st' => ! $record->certified['1st'],

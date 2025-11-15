@@ -16,7 +16,7 @@ use App\Providers\Filament\Utils\Navigation;
 use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
 use DutchCodingCompany\FilamentSocialite\Provider;
 use Exception;
-use Filament\Pages;
+use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -56,7 +56,7 @@ class AuthPanelProvider extends PanelProvider
                             default => User::class,
                         };
 
-                        /** @var \App\Models\User|\App\Models\Employee $user */
+                        /** @var User|Employee $user */
                         $user = $model::where('email', $oauthUser->getEmail())->first();
 
                         if ($user) {
@@ -76,7 +76,7 @@ class AuthPanelProvider extends PanelProvider
     }
 }
 
-class Redirect extends Pages\Dashboard
+class Redirect extends Dashboard
 {
     public function __construct()
     {

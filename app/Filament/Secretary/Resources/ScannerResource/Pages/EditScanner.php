@@ -3,7 +3,8 @@
 namespace App\Filament\Secretary\Resources\ScannerResource\Pages;
 
 use App\Filament\Secretary\Resources\ScannerResource;
-use Filament\Actions;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
 
@@ -24,9 +25,9 @@ class EditScanner extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ActionGroup::make([
-                Actions\DeleteAction::make()
-                    ->form([
+            ActionGroup::make([
+                DeleteAction::make()
+                    ->schema([
                         TextInput::make('password')
                             ->label('Password')
                             ->password()

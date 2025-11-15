@@ -4,12 +4,15 @@ namespace App\Filament\Employee\Resources;
 
 use App\Enums\TimelogMode;
 use App\Enums\TimelogState;
-use App\Filament\Employee\Resources\TimelogResource\Pages;
+use App\Filament\Employee\Resources\TimelogResource\Pages\ListTimelogs;
 use App\Models\Timelog;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -19,7 +22,7 @@ class TimelogResource extends Resource
 {
     protected static ?string $model = Timelog::class;
 
-    protected static ?string $navigationIcon = 'gmdi-alarm-on-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-alarm-on-o';
 
     public static function table(Table $table): Table
     {
@@ -30,21 +33,21 @@ class TimelogResource extends Resource
                 $query->with('original');
             })
             ->columns([
-                Tables\Columns\TextColumn::make('scanner.name')
+                TextColumn::make('scanner.name')
                     ->searchable()
                     ->sortable()
                     ->extraAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('time')
+                TextColumn::make('time')
                     ->searchable()
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable()
                     ->extraAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('uid')
+                TextColumn::make('uid')
                     ->label('UID')
                     ->searchable(query: fn ($query, $search) => $query->whereUid($search)),
-                Tables\Columns\TextColumn::make('state'),
-                Tables\Columns\TextColumn::make('mode'),
-                Tables\Columns\TextColumn::make('recast')
+                TextColumn::make('state'),
+                TextColumn::make('mode'),
+                TextColumn::make('recast')
                     ->alignEnd()
                     ->label('Rectified')
                     ->badge()
@@ -54,15 +57,15 @@ class TimelogResource extends Resource
                     ->state(fn (Timelog $record) => $record->recast ? 'Yes' : 'No'),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('recast')
+                TernaryFilter::make('recast')
                     ->label('Rectified')
                     ->native(false)
                     ->queries(
                         true: fn ($query) => $query->where('recast', true),
                         false: fn ($query) => $query->where('recast', false),
                     ),
-                Tables\Filters\Filter::make('time')
-                    ->form([
+                Filter::make('time')
+                    ->schema([
                         DateTimePicker::make('from')
                             ->seconds(false),
                         DateTimePicker::make('until')
@@ -87,16 +90,16 @@ class TimelogResource extends Resource
 
                         return $indicators;
                     }),
-                Tables\Filters\SelectFilter::make('scanner')
+                SelectFilter::make('scanner')
                     ->relationship('scanner', 'name', fn ($query) => $query->whereHas('employees', fn ($query) => $query->where('employees.id', Auth::id()))->reorder()->orderBy('priority', 'desc')->orderBy('name'))
                     ->searchable()
                     ->multiple()
                     ->preload(),
-                Tables\Filters\SelectFilter::make('mode')
+                SelectFilter::make('mode')
                     ->options(TimelogMode::class)
                     ->multiple()
                     ->searchable(),
-                Tables\Filters\SelectFilter::make('state')
+                SelectFilter::make('state')
                     ->options(TimelogState::class)
                     ->multiple()
                     ->searchable(),
@@ -117,7 +120,7 @@ class TimelogResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimelogs::route('/'),
+            'index' => ListTimelogs::route('/'),
         ];
     }
 }

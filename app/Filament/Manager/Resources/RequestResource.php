@@ -4,12 +4,16 @@ namespace App\Filament\Manager\Resources;
 
 use App\Enums\RequestStatus;
 use App\Filament\Actions\Request\TableActions\RespondAction;
-use App\Filament\Manager\Resources\RequestResource\Pages;
+use App\Filament\Manager\Resources\RequestResource\Pages\ListRequests;
 use App\Models\Request;
 use App\Models\Schedule;
-use Filament\Forms\Form;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,9 +21,9 @@ class RequestResource extends Resource
 {
     protected static ?string $model = Request::class;
 
-    protected static ?string $navigationIcon = 'gmdi-rule-folder-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-rule-folder-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -31,33 +35,33 @@ class RequestResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('requestable')
+                TextColumn::make('requestable')
                     ->label('Type')
                     ->getStateUsing(fn ($record) => class_basename($record->requestable)),
-                Tables\Columns\TextColumn::make('requestable.title')
+                TextColumn::make('requestable.title')
                     ->label('Title')
                     ->searchable()
                     ->getStateUsing(fn (Request $record) => $record->requestable->title),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('requestable.requestor.name')
+                TextColumn::make('status'),
+                TextColumn::make('requestable.requestor.name')
                     ->placeholder('N/A'),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('to')
+                TextColumn::make('status'),
+                TextColumn::make('to')
                     ->label('Target')
                     ->getStateUsing(fn (Request $record) => ucfirst($record->to))
                     ->placeholder('N/A'),
-                Tables\Columns\TextColumn::make('requestable.requested_at')
+                TextColumn::make('requestable.requested_at')
                     ->label('Time')
                     ->placeholder(fn ($record) => $record->created_at),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('requestable_type')
+                SelectFilter::make('requestable_type')
                     ->label('Type')
                     ->native(false)
                     ->options([
                         Schedule::class => 'Schedule',
                     ]),
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->options(RequestStatus::class)
                     ->default([RequestStatus::REQUEST->value, RequestStatus::DEFLECT->value])
                     ->multiple()
@@ -66,12 +70,12 @@ class RequestResource extends Resource
                 //     ->options(['approval' => 'Approval', 'revokation' => 'Revokation', 'termination' => 'Termination'])
                 //     ->multiple()
                 //     ->native(false),
-                Tables\Filters\SelectFilter::make('completed')
+                SelectFilter::make('completed')
                     ->options([true => 'Completed', false => 'Pending'])
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
+            ->recordActions([
+                Action::make('view')
                     ->modalHeading(fn (Request $record) => $record->requestable->title)
                     ->modalContent(fn (Request $record) => view('filament.requests.view', ['schedule' => $record->requestable, 'request' => $record]))
                     ->modalCancelActionLabel('Close')
@@ -80,8 +84,8 @@ class RequestResource extends Resource
                     ->slideOver(),
                 RespondAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+            ->toolbarActions([
+                BulkActionGroup::make([
 
                 ]),
             ]);
@@ -97,7 +101,7 @@ class RequestResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRequests::route('/'),
+            'index' => ListRequests::route('/'),
         ];
     }
 

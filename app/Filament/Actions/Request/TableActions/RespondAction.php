@@ -6,17 +6,17 @@ use App\Enums\RequestStatus;
 use App\Enums\WorkArrangement;
 use App\Models\Request;
 use App\Models\Schedule;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ViewField;
-use Filament\Forms\Get;
-use Filament\Tables\Actions\Action;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -125,7 +125,7 @@ class RespondAction extends Action
                     $record->requestable->requests()->create([
                         'status' => $data['status'],
                         'user_id' => Auth::id(),
-                        'to' => Filament::getCurrentPanel()->getId(),
+                        'to' => Filament::getCurrentOrDefaultPanel()->getId(),
                         'step' => $record->step,
                         'remarks' => $data['remarks'] ?? null,
                         'completed' => $data['status'] === RequestStatus::REJECT->value ||

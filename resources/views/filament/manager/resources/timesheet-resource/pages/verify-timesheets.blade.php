@@ -6,7 +6,7 @@
     >
         {{ $this->form }}
 
-        <x-filament-panels::form.actions
+        <x-filament::actions
             :actions="$this->getFormActions()"
         />
     </x-filament-panels::form>

@@ -3,12 +3,12 @@
 namespace App\Filament\Auth\Concerns;
 
 use App\Models\Social;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs\Tab;
 
 trait SocialOauthProviderLinker
 {
@@ -95,7 +95,7 @@ trait SocialOauthProviderLinker
             'link' => true,
             'url' => $this->currentUrl.'/?tab=-socials-tab',
             'provider' => $provider,
-            'guard' => match (Filament::getCurrentPanel()->getId()) {
+            'guard' => match (Filament::getCurrentOrDefaultPanel()->getId()) {
                 'employee' => 'employee',
                 default => 'web',
             },

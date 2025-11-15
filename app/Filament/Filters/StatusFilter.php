@@ -33,7 +33,7 @@ class StatusFilter extends Filter
     {
         parent::setUp();
 
-        $this->form([
+        $this->schema([
             Select::make('status')
                 ->options(EmploymentStatus::class)
                 ->placeholder('All')

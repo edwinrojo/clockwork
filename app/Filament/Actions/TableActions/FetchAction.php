@@ -6,12 +6,12 @@ use App\Actions\RemoteFetchTimelogs;
 use App\Jobs\FetchTimelogs;
 use App\Models\Scanner;
 use Exception;
+use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Http\Client\ConnectionException;
 
 class FetchAction extends Action

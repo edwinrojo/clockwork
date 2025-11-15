@@ -3,12 +3,23 @@
 namespace App\Filament\Developer\Resources;
 
 use App\Enums\UserRole;
+use App\Filament\Developer\Resources\RouteResource\Pages\CreateRoute;
+use App\Filament\Developer\Resources\RouteResource\Pages\EditRoute;
+use App\Filament\Developer\Resources\RouteResource\Pages\ListRoutes;
 use App\Models\Route;
 use App\Models\Schedule;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -17,31 +28,31 @@ class RouteResource extends Resource
 {
     protected static ?string $model = Route::class;
 
-    protected static ?string $navigationIcon = 'gmdi-route-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-route-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Route information')
+                Section::make('Route information')
                     ->schema([
-                        Forms\Components\Select::make('model')
+                        Select::make('model')
                             ->options([
                                 Schedule::class => 'Schedule',
                             ])
                             ->required(),
-                        Forms\Components\Repeater::make('path')
+                        Repeater::make('path')
                             ->grid(4)
                             ->simple(
-                                Forms\Components\Select::make('role')
+                                Select::make('role')
                                     ->label('Role')
                                     ->options(UserRole::requestable())
                                     ->required(),
                             ),
-                        Forms\Components\Repeater::make('escalation')
+                        Repeater::make('escalation')
                             ->grid(4)
                             ->simple(
-                                Forms\Components\Select::make('role')
+                                Select::make('role')
                                     ->label('Role')
                                     ->options(UserRole::requestable())
                                     ->required(),
@@ -54,27 +65,27 @@ class RouteResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('model')
+                TextColumn::make('model')
                     ->searchable()
                     ->sortable()
                     ->getStateUsing(fn (Route $record) => class_basename($record->model)),
-                Tables\Columns\TextColumn::make('path')
+                TextColumn::make('path')
                     ->getStateUsing(fn (Route $record) => collect($record->path)->map(fn ($path) => UserRole::tryFrom($path)->getLabel())->join(', ')),
-                Tables\Columns\TextColumn::make('escalation')
+                TextColumn::make('escalation')
                     ->getStateUsing(fn (Route $record) => collect($record->escalation)->map(fn ($target) => UserRole::tryFrom($target)->getLabel())->join(', ')),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->recordUrl(null);
@@ -90,9 +101,9 @@ class RouteResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => RouteResource\Pages\ListRoutes::route('/'),
-            'create' => RouteResource\Pages\CreateRoute::route('/create'),
-            'edit' => RouteResource\Pages\EditRoute::route('/{record}/edit'),
+            'index' => ListRoutes::route('/'),
+            'create' => CreateRoute::route('/create'),
+            'edit' => EditRoute::route('/{record}/edit'),
         ];
     }
 

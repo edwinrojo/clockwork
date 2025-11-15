@@ -38,7 +38,7 @@ class FetchTimelogsAction extends Action
 
         $this->slideOver();
 
-        $this->form([
+        $this->schema([
             TextInput::make('month')
                 ->default(today()->day > 15 ? today()->startOfMonth()->format('Y-m') : today()->subMonth()->format('Y-m'))
                 ->rules(['required'])

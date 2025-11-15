@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\Request\TableActions;
 
 use App\Models\Schedule;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 
 class ShowRoutingAction extends Action
 {

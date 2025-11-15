@@ -4,15 +4,24 @@ namespace App\Filament\Superuser\Resources;
 
 use App\Enums\UserPermission;
 use App\Enums\UserRole;
-use App\Filament\Superuser\Resources\UserResource\Pages;
+use App\Filament\Superuser\Resources\UserResource\Pages\CreateUser;
+use App\Filament\Superuser\Resources\UserResource\Pages\EditUser;
+use App\Filament\Superuser\Resources\UserResource\Pages\ListUsers;
 use App\Filament\Superuser\Resources\UserResource\RelationManagers\OfficesRelationManager;
 use App\Filament\Superuser\Resources\UserResource\RelationManagers\ScannersRelationManager;
 use App\Models\User;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -23,36 +32,36 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'gmdi-supervisor-account-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-supervisor-account-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Information and Credentials')
+                Section::make('Information and Credentials')
                     ->columns(3)
                     ->schema([
-                        Forms\Components\TextInput::make('name')
+                        TextInput::make('name')
                             ->columnSpan(2)
                             ->rule('required')
                             ->markAsRequired()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('position')
+                        TextInput::make('position')
                             ->columnSpan(2)
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('username')
+                        TextInput::make('username')
                             ->columnSpan(2)
                             ->rule('required')
                             ->markAsRequired()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
+                        TextInput::make('email')
                             ->columnSpan(2)
                             ->rule('required')
                             ->rule('email')
                             ->unique(ignoreRecord: true)
                             ->markAsRequired()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('password')
+                        TextInput::make('password')
                             ->columnSpan(2)
                             ->password()
                             ->rule(Password::default())
@@ -62,7 +71,7 @@ class UserResource extends Resource
                             ->requiredWith('passwordConfirmation')
                             ->same('passwordConfirmation')
                             ->hiddenOn(['view', 'edit']),
-                        Forms\Components\TextInput::make('passwordConfirmation')
+                        TextInput::make('passwordConfirmation')
                             ->columnSpan(2)
                             ->password()
                             ->rule(fn (string $operation) => $operation === 'create' ? 'required' : null)
@@ -71,20 +80,20 @@ class UserResource extends Resource
                             ->dehydrated(false)
                             ->hiddenOn(['view', 'edit']),
                     ]),
-                Forms\Components\Section::make('Employee Account Link')
+                Section::make('Employee Account Link')
                     ->columns(3)
                     ->schema([
-                        Forms\Components\Select::make('employee_id')
+                        Select::make('employee_id')
                             ->columnSpan(2)
                             ->relationship('employee', 'full_name')
                             ->searchable()
                             ->preload(),
                     ]),
-                Forms\Components\Section::make('Roles and Permissions')
+                Section::make('Roles and Permissions')
                     ->columns(3)
                     ->schema([
-                        Forms\Components\Group::make([
-                            Forms\Components\CheckboxList::make('roles')
+                        Group::make([
+                            CheckboxList::make('roles')
                                 ->live()
                                 ->bulkToggleable()
                                 ->options(function () {
@@ -94,8 +103,8 @@ class UserResource extends Resource
                                         ->toArray();
                                 }),
                         ])->columnSpan(1),
-                        Forms\Components\Group::make([
-                            Forms\Components\CheckboxList::make('permissions')
+                        Group::make([
+                            CheckboxList::make('permissions')
                                 ->visible(fn (Get $get) => in_array(UserRole::SUPERUSER->value, $get('roles')))
                                 ->dehydratedWhenHidden()
                                 ->dehydrateStateUsing(fn (Get $get, array $state) => in_array(UserRole::SUPERUSER->value, $get('roles')) ? $state : [])
@@ -112,37 +121,37 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('username')
+                TextColumn::make('username')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('roles')
+                TextColumn::make('roles')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('offices.code')
+                TextColumn::make('offices.code')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('offices')
+                SelectFilter::make('offices')
                     ->relationship('offices', 'code')
                     ->searchable()
                     ->preload()
                     ->multiple()
                     ->native(false),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
             ->deferLoading()
             ->recordUrl(null);
@@ -159,9 +168,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            'index' => ListUsers::route('/'),
+            'create' => CreateUser::route('/create'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 

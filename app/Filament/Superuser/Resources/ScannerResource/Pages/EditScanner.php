@@ -5,7 +5,11 @@ namespace App\Filament\Superuser\Resources\ScannerResource\Pages;
 use App\Actions\FlushScannerTimelogs;
 use App\Filament\Superuser\Resources\ScannerResource;
 use App\Models\Scanner;
-use Filament\Actions;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -27,9 +31,9 @@ class EditScanner extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ActionGroup::make([
-                Actions\DeleteAction::make(),
-                Actions\ForceDeleteAction::make()
+            ActionGroup::make([
+                DeleteAction::make(),
+                ForceDeleteAction::make()
                     ->modalDescription(function (Scanner $record) {
                         if ($record->timelogs()->withoutGlobalScopes()->doesntExist()) {
                             return 'Are you sure you would like to do this?';
@@ -37,7 +41,7 @@ class EditScanner extends EditRecord
 
                         return "Are you sure you want to delete this scanner {$record->name}? This will also delete all related resources and cannot be undone.";
                     })
-                    ->form([
+                    ->schema([
                         TextInput::make('password')
                             ->hidden(fn (Scanner $record) => $record->timelogs()->withoutGlobalScopes()->doesntExist())
                             ->label('Password')
@@ -46,12 +50,12 @@ class EditScanner extends EditRecord
                             ->markAsRequired()
                             ->rules(['required']),
                     ]),
-                Actions\Action::make('Flush')
+                Action::make('Flush')
                     ->color('danger')
                     ->icon('heroicon-o-trash')
                     ->requiresConfirmation()
                     ->modalDescription('Are you sure you want to flush all the scanner\'s timelogs? This cannot be undone.')
-                    ->form([
+                    ->schema([
                         TextInput::make('month')
                             ->type('month'),
                         TextInput::make('password')
@@ -71,7 +75,7 @@ class EditScanner extends EditRecord
                             ->title('Scanner timelogs are flushed')
                             ->send();
                     }),
-                Actions\RestoreAction::make(),
+                RestoreAction::make(),
             ]),
         ];
     }

@@ -4,11 +4,17 @@ namespace App\Filament\Superuser\Pages;
 
 use App\Models\Setting;
 use Filament\Actions\Action;
-use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\MarkdownEditor;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
 use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -21,9 +27,9 @@ class Settings extends Page
 
     protected static ?int $navigationSort = PHP_INT_MAX;
 
-    protected static ?string $navigationIcon = 'gmdi-tune-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-tune-o';
 
-    protected static string $view = 'filament.superuser.pages.settings';
+    protected string $view = 'filament.superuser.pages.settings';
 
     protected ?string $subheading = 'This is global settings for the application.';
 
@@ -54,17 +60,17 @@ class Settings extends Page
         ];
     }
 
-    public function form(Forms\Form $form): Forms\Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
             ->schema([
-                Forms\Components\Tabs::make()
+                Tabs::make()
                     ->tabs([
-                        Forms\Components\Tabs\Tab::make('General Information')
+                        Tab::make('General Information')
                             ->columns(5)
                             ->schema([
-                                Forms\Components\FileUpload::make('seal')
+                                FileUpload::make('seal')
                                     ->columnSpan(1)
                                     ->visibility('public')
                                     ->getUploadedFileNameForStorageUsing(fn (TemporaryUploadedFile $file) => 'seal.'.$file->extension())
@@ -72,27 +78,27 @@ class Settings extends Page
                                     ->avatar()
                                     ->required()
                                     ->maxSize(2048),
-                                Forms\Components\Group::make([
-                                    Forms\Components\TextInput::make('name')
+                                Group::make([
+                                    TextInput::make('name')
                                         ->markAsRequired()
                                         ->rule('required'),
-                                    Forms\Components\TextInput::make('address')
+                                    TextInput::make('address')
                                         ->markAsRequired()
                                         ->rule('required'),
-                                    Forms\Components\TextInput::make('url')
+                                    TextInput::make('url')
                                         ->url(),
-                                    Forms\Components\TextInput::make('email')
+                                    TextInput::make('email')
                                         ->rule('email'),
                                 ])->columnSpan(2),
                             ]),
-                        Forms\Components\Tabs\Tab::make('Privacy Policy')
+                        Tab::make('Privacy Policy')
                             ->schema([
-                                Forms\Components\MarkdownEditor::make('pp')
+                                MarkdownEditor::make('pp')
                                     ->hiddenLabel(),
                             ]),
-                        Forms\Components\Tabs\Tab::make('User Agreement')
+                        Tab::make('User Agreement')
                             ->schema([
-                                Forms\Components\MarkdownEditor::make('ua')
+                                MarkdownEditor::make('ua')
                                     ->hiddenLabel(),
                             ]),
                     ]),

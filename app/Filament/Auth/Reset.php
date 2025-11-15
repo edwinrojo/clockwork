@@ -2,15 +2,17 @@
 
 namespace App\Filament\Auth;
 
+use App\Models\Employee;
+use App\Models\User;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Exception;
+use Filament\Auth\Notifications\ResetPassword;
+use Filament\Auth\Pages\PasswordReset\RequestPasswordReset;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Auth\ResetPassword;
 use Filament\Notifications\Notification;
-use Filament\Pages\Auth\PasswordReset\RequestPasswordReset;
+use Filament\Schemas\Components\Component;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Support\Facades\Password;
 
@@ -18,7 +20,7 @@ class Reset extends RequestPasswordReset
 {
     protected static string $layout = 'filament-panels::components.layout.base';
 
-    protected static string $view = 'filament.auth.reset';
+    protected string $view = 'filament.auth.reset';
 
     public function request(): void
     {
@@ -45,7 +47,7 @@ class Reset extends RequestPasswordReset
 
                 $notification->url = Filament::getResetPasswordUrl($token, $user, ['type' => $data['account_type']]);
 
-                /** @var \App\Models\User|App\Models\Employee $user */
+                /** @var User|Employee $user */
                 $user->notify($notification);
             },
         );

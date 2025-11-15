@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ScannerStatisticsWidget extends BaseWidget
 {
-    protected static ?string $pollingInterval = '45s';
+    protected ?string $pollingInterval = '45s';
 
     protected function getColumns(): int
     {
@@ -19,7 +19,7 @@ class ScannerStatisticsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $superuser = Filament::getCurrentPanel()->getId() === 'superuser';
+        $superuser = Filament::getCurrentOrDefaultPanel()->getId() === 'superuser';
 
         $scope = function (Builder $query) {
             $query->orWhere(function ($query) {

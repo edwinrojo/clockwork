@@ -2,13 +2,16 @@
 
 namespace App\Filament\Secretary\Resources;
 
-use App\Filament\Secretary\Resources\OfficeResource\Pages;
+use App\Filament\Secretary\Resources\OfficeResource\Pages\EditOffice;
+use App\Filament\Secretary\Resources\OfficeResource\Pages\ListOffices;
 use App\Filament\Secretary\Resources\OfficeResource\RelationManagers\EmployeesRelationManager;
 use App\Filament\Superuser\Resources\OfficeResource as SuperuserOfficeResource;
 use App\Models\Office;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -16,7 +19,7 @@ class OfficeResource extends Resource
 {
     protected static ?string $model = Office::class;
 
-    protected static ?string $navigationIcon = 'gmdi-corporate-fare-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-corporate-fare-o';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -25,45 +28,45 @@ class OfficeResource extends Resource
         return SuperuserOfficeResource::formSchema(head: true);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::formSchema());
+        return $schema->schema(static::formSchema());
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('code')
+                TextColumn::make('code')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('employees_count')
+                TextColumn::make('employees_count')
                     ->label('Employees')
                     ->counts('employees')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+            ->toolbarActions([
+                BulkActionGroup::make([
                 ]),
             ])
             ->deferLoading()
@@ -80,8 +83,8 @@ class OfficeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListOffices::route('/'),
-            'edit' => Pages\EditOffice::route('/{record}/edit'),
+            'index' => ListOffices::route('/'),
+            'edit' => EditOffice::route('/{record}/edit'),
         ];
     }
 

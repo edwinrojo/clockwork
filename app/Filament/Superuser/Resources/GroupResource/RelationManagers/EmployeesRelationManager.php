@@ -5,11 +5,17 @@ namespace App\Filament\Superuser\Resources\GroupResource\RelationManagers;
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Employee;
 use App\Models\Member;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -20,13 +26,13 @@ class EmployeesRelationManager extends RelationManager
 
     protected static ?string $title = 'Employee members';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('employee_id')
+        return $schema
+            ->components([
+                Select::make('employee_id')
                     ->relationship('employee', 'name', function ($query) {
-                        $admin = Filament::getCurrentPanel()->getId() === 'superuser';
+                        $admin = Filament::getCurrentOrDefaultPanel()->getId() === 'superuser';
 
                         if ($admin) {
                             return;
@@ -53,7 +59,7 @@ class EmployeesRelationManager extends RelationManager
                             ->where('group_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
@@ -68,7 +74,7 @@ class EmployeesRelationManager extends RelationManager
             ->modifyQueryUsing(function (Builder $query) {
                 $query->with(['employee.offices', 'employee.scanners']);
 
-                if (Filament::getCurrentPanel()->getId() === 'secretary') {
+                if (Filament::getCurrentOrDefaultPanel()->getId() === 'secretary') {
                     $query->whereHas('employee', function ($query) {
                         $query->whereHas('scanners', function ($query) {
                             $query->whereIn('scanners.id', user()->scanners->pluck('id'));
@@ -85,9 +91,9 @@ class EmployeesRelationManager extends RelationManager
                 }
             })
             ->columns([
-                Tables\Columns\TextColumn::make('employee.name')
+                TextColumn::make('employee.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('employee.offices.code')
+                TextColumn::make('employee.offices.code')
                     ->searchable()
                     ->formatStateUsing(function (Member $record) {
                         $offices = $record->employee->offices->map(function ($office) {
@@ -101,7 +107,7 @@ class EmployeesRelationManager extends RelationManager
 
                         return str($offices)->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->getStateUsing(function (Member $record): string {
                         return str($record->employee->status?->value)
@@ -110,7 +116,7 @@ class EmployeesRelationManager extends RelationManager
                                 return $status->append(" ({$record->employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -119,16 +125,16 @@ class EmployeesRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl')
                     ->visible(function (Member $record) {
-                        $admin = Filament::getCurrentPanel()->getId() === 'superuser';
+                        $admin = Filament::getCurrentOrDefaultPanel()->getId() === 'superuser';
 
                         if ($admin) {
                             return true;
@@ -147,11 +153,11 @@ class EmployeesRelationManager extends RelationManager
                         return $record->employee?->offices->some(fn ($office) => in_array($office->id, $offices->toArray())) ||
                             $record->employee?->scanners->some(fn ($scanner) => in_array($scanner->id, $scanners->toArray()));
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation')
                     ->visible(function (Member $record) {
-                        $admin = Filament::getCurrentPanel()->getId() === 'superuser';
+                        $admin = Filament::getCurrentOrDefaultPanel()->getId() === 'superuser';
 
                         if ($admin) {
                             return true;
@@ -171,9 +177,9 @@ class EmployeesRelationManager extends RelationManager
                             $record->employee?->scanners->some(fn ($scanner) => in_array($scanner->id, $scanners->toArray()));
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation'),
                 ]),

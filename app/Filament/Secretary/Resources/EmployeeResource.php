@@ -4,7 +4,8 @@ namespace App\Filament\Secretary\Resources;
 
 use App\Filament\Filters\ActiveFilter;
 use App\Filament\Filters\StatusFilter;
-use App\Filament\Secretary\Resources\EmployeeResource\Pages;
+use App\Filament\Secretary\Resources\EmployeeResource\Pages\EditEmployee;
+use App\Filament\Secretary\Resources\EmployeeResource\Pages\ListEmployees;
 use App\Filament\Superuser\Resources\EmployeeResource as SuperuserEmployeeResource;
 use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\GroupsRelationManager;
 use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\OfficesRelationManager;
@@ -12,10 +13,14 @@ use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\ScannersR
 use App\Models\Employee;
 use App\Models\Office;
 use App\Models\Scopes\ActiveScope;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,11 +31,11 @@ class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
 
-    protected static ?string $navigationIcon = 'gmdi-badge-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-badge-o';
 
     protected static ?string $recordTitleAttribute = 'full_name';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema(SuperuserEmployeeResource::formSchema());
@@ -40,9 +45,9 @@ class EmployeeResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('offices.code')
+                TextColumn::make('offices.code')
                     ->formatStateUsing(function (Employee $record) {
                         $offices = $record->offices->map(function ($office) {
                             return str($office->code)
@@ -55,13 +60,13 @@ class EmployeeResource extends Resource
 
                         return str($offices)->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('status'),
+                TextColumn::make('status'),
             ])
             ->filters([
                 StatusFilter::make(),
-                Tables\Filters\Filter::make('offices')
-                    ->form([
-                        Forms\Components\Select::make('offices')
+                Filter::make('offices')
+                    ->schema([
+                        Select::make('offices')
                             ->options(
                                 Office::query()
                                     ->where(function ($query) {
@@ -123,12 +128,12 @@ class EmployeeResource extends Resource
                 ActiveFilter::make(),
                 TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -145,8 +150,8 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'index' => ListEmployees::route('/'),
+            'edit' => EditEmployee::route('/{record}/edit'),
         ];
     }
 

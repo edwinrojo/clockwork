@@ -10,7 +10,7 @@ class UserAgreement extends Page
 
     protected static ?string $navigationLabel = 'User Agreement';
 
-    protected static string $view = 'filament.legal.pages.index';
+    protected string $view = 'filament.legal.pages.index';
 
     public function agreement()
     {

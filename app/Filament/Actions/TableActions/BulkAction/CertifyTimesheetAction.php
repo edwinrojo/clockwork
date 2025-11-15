@@ -2,9 +2,9 @@
 
 namespace App\Filament\Actions\TableActions\BulkAction;
 
+use Filament\Actions\BulkAction;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\URL;
 
@@ -14,7 +14,7 @@ class CertifyTimesheetAction extends BulkAction
     {
         parent::setUp();
 
-        $this->visible(in_array(Filament::getCurrentPanel()->getId(), ['director', 'leader']));
+        $this->visible(in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'leader']));
 
         $this->name('timesheet-certificator');
 
@@ -35,7 +35,7 @@ class CertifyTimesheetAction extends BulkAction
                 return;
             }
 
-            $panel = Filament::getCurrentPanel()->getId();
+            $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
             if (! in_array($panel, ['director', 'leader'])) {
                 Notification::make()

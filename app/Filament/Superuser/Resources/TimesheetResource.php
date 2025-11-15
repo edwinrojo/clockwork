@@ -2,10 +2,10 @@
 
 namespace App\Filament\Superuser\Resources;
 
-use App\Filament\Superuser\Resources\TimesheetResource\Pages;
+use App\Filament\Superuser\Resources\TimesheetResource\Pages\ListTimesheets;
 use App\Models\Employee;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
 class TimesheetResource extends Resource
@@ -14,7 +14,7 @@ class TimesheetResource extends Resource
 
     protected static ?string $model = Employee::class;
 
-    protected static ?string $navigationIcon = 'gmdi-document-scanner-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-document-scanner-o';
 
     protected static ?string $modelLabel = 'Timesheet';
 
@@ -25,7 +25,7 @@ class TimesheetResource extends Resource
             ->prepend('App\\Models\\');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -43,7 +43,7 @@ class TimesheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimesheets::route('/'),
+            'index' => ListTimesheets::route('/'),
         ];
     }
 }

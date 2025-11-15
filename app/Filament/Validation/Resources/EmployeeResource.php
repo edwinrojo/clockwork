@@ -2,7 +2,7 @@
 
 namespace App\Filament\Validation\Resources;
 
-use App\Filament\Validation\Resources\EmployeeResource\Pages;
+use App\Filament\Validation\Resources\EmployeeResource\Pages\PreviewTimesheet;
 use App\Models\Employee;
 use Filament\Resources\Resource;
 
@@ -19,8 +19,8 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\PreviewTimesheet::route('/'),
-            'preview' => Pages\PreviewTimesheet::route('/preview/{record}'),
+            'index' => PreviewTimesheet::route('/'),
+            'preview' => PreviewTimesheet::route('/preview/{record}'),
         ];
     }
 }

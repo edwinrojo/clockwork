@@ -2,16 +2,27 @@
 
 namespace App\Filament\Superuser\Resources;
 
-use App\Filament\Superuser\Resources\SignatureResource\Pages;
+use App\Filament\Superuser\Resources\SignatureResource\Pages\CreateSignature;
+use App\Filament\Superuser\Resources\SignatureResource\Pages\EditSignature;
+use App\Filament\Superuser\Resources\SignatureResource\Pages\ListSignatures;
 use App\Models\Employee;
 use App\Models\Signature;
 use App\Models\User;
-use Filament\Forms;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\MorphToSelect;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Forms\Components\MorphToSelect\Type;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,13 +36,13 @@ class SignatureResource extends Resource
 {
     protected static ?string $model = Signature::class;
 
-    protected static ?string $navigationIcon = 'gmdi-rate-review-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-rate-review-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        $signaturable = new class('signature') extends Forms\Components\MorphToSelect
+        $signaturable = new class('signature') extends MorphToSelect
         {
-            public function getChildComponents(): array
+            public function getDefaultChildComponents(): array
             {
                 $relationship = $this->getRelationship();
                 $typeColumn = $relationship->getMorphType();
@@ -41,20 +52,20 @@ class SignatureResource extends Resource
                 $isRequired = $this->isRequired();
 
                 /** @var ?Type $selectedType */
-                $selectedType = $types[$this->evaluate(fn (Forms\Get $get): ?string => $get($typeColumn))] ?? null;
+                $selectedType = $types[$this->evaluate(fn (Get $get): ?string => $get($typeColumn))] ?? null;
 
                 return [
-                    Forms\Components\Select::make($typeColumn)
+                    Select::make($typeColumn)
                         ->label('Type')
-                        ->options(array_map(fn (Forms\Components\MorphToSelect\Type $type): string => $type->getLabel(), $types))
+                        ->options(array_map(fn (Type $type): string => $type->getLabel(), $types))
                         ->native($this->isNative())
                         ->required($isRequired)
                         ->live()
-                        ->afterStateUpdated(function (Forms\Set $set) use ($keyColumn) {
+                        ->afterStateUpdated(function (Set $set) use ($keyColumn) {
                             $set($keyColumn, null);
                             $this->callAfterStateUpdated();
                         }),
-                    Forms\Components\Select::make($keyColumn)
+                    Select::make($keyColumn)
                         ->label($selectedType?->getLabel())
                         ->options($selectedType?->getOptionsUsing)
                         ->getSearchResultsUsing($selectedType?->getSearchResultsUsing)
@@ -72,7 +83,7 @@ class SignatureResource extends Resource
                         ->allowHtml($this->isHtmlAllowed())
                         ->optionsLimit($this->getOptionsLimit())
                         ->preload($this->isPreloaded())
-                        ->when($this->isLive(), fn (Forms\Components\Select $component) => $component->live(onBlur: $this->isLiveOnBlur()))
+                        ->when($this->isLive(), fn (Select $component) => $component->live(onBlur: $this->isLiveOnBlur()))
                         ->afterStateUpdated(fn () => $this->callAfterStateUpdated()),
                 ];
             }
@@ -89,16 +100,16 @@ class SignatureResource extends Resource
                     ->searchable()
                     ->preload()
                     ->types([
-                        MorphToSelect\Type::make(User::class)
+                        Type::make(User::class)
                             ->titleAttribute('name'),
-                        MorphToSelect\Type::make(Employee::class)
+                        Type::make(Employee::class)
                             ->titleAttribute('name'),
                     ]),
-                Forms\Components\Fieldset::make('Signature')
+                Fieldset::make('Signature')
                     ->columns(1)
                     ->columnSpan(2)
                     ->schema([
-                        Forms\Components\FileUpload::make('specimen')
+                        FileUpload::make('specimen')
                             ->required()
                             ->disk('fake')
                             ->image()
@@ -110,7 +121,7 @@ class SignatureResource extends Resource
                             ->getUploadedFileNameForStorageUsing(
                                 fn (TemporaryUploadedFile $file): string => 'data:'.$file->getMimeType().';base64,'.base64_encode($file->getContent())
                             ),
-                        Forms\Components\FileUpload::make('certificate')
+                        FileUpload::make('certificate')
                             ->required()
                             ->disk('fake')
                             ->reactive()
@@ -119,7 +130,7 @@ class SignatureResource extends Resource
                             ->getUploadedFileNameForStorageUsing(
                                 fn (TemporaryUploadedFile $file): string => 'data:'.$file->getMimeType().';base64,'.base64_encode($file->getContent())
                             ),
-                        Forms\Components\TextInput::make('password')
+                        TextInput::make('password')
                             ->visible(fn (Get $get) => current($get('certificate')) instanceof TemporaryUploadedFile)
                             ->password()
                             ->requiredWith('certificate')
@@ -148,23 +159,23 @@ class SignatureResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('signaturable_type')
+                TextColumn::make('signaturable_type')
                     ->label('Type')
                     ->getStateUsing(fn (Signature $record) => class_basename($record->signaturable_type))
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('signaturable.name')
+                TextColumn::make('signaturable.name')
                     ->label('Owner'),
             ])
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                     // Tables\Actions\ForceDeleteBulkAction::make(),
                     // Tables\Actions\RestoreBulkAction::make(),
                 ]),
@@ -183,9 +194,9 @@ class SignatureResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSignatures::route('/'),
-            'create' => Pages\CreateSignature::route('/create'),
-            'edit' => Pages\EditSignature::route('/{record}/edit'),
+            'index' => ListSignatures::route('/'),
+            'create' => CreateSignature::route('/create'),
+            'edit' => EditSignature::route('/{record}/edit'),
         ];
     }
 

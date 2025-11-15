@@ -5,7 +5,8 @@ namespace App\Filament\Superuser\Resources\ScannerResource\Pages;
 use App\Filament\Actions\FetchTimelogsAction;
 use App\Filament\Actions\ImportTimelogsAction;
 use App\Filament\Superuser\Resources\ScannerResource;
-use Filament\Actions;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListScanners extends ListRecords
@@ -15,10 +16,10 @@ class ListScanners extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ActionGroup::make([
+            ActionGroup::make([
                 ImportTimelogsAction::make(),
                 FetchTimelogsAction::make(),
-                Actions\CreateAction::make(),
+                CreateAction::make(),
             ]),
         ];
     }

@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\Setting;
+use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Auth;
+
 if (! function_exists('settings')) {
     function settings(?string $key = null, bool $defaults = true): mixed
     {
@@ -8,20 +13,20 @@ if (! function_exists('settings')) {
         }
 
         try {
-            $value = \App\Models\Setting::get($key);
+            $value = Setting::get($key);
 
-            return $defaults ? ($value ?? \App\Models\Setting::default($key)) : $value;
-        } catch (\Illuminate\Database\QueryException) {
+            return $defaults ? ($value ?? Setting::default($key)) : $value;
+        } catch (QueryException) {
             return null;
         }
     }
 }
 
 if (! function_exists('user')) {
-    function user(): ?\App\Models\User
+    function user(): ?User
     {
-        /** @var ?\App\Models\User */
-        $user = \Illuminate\Support\Facades\Auth::user();
+        /** @var ?User */
+        $user = Auth::user();
 
         return $user;
     }

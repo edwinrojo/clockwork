@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 
 class Attachment extends Model
@@ -90,7 +91,7 @@ class Attachment extends Model
         return Attribute::make(
             function (): ?string {
                 if ($this->disk !== null && in_array($this->disk, ['public', 'local', 'azure'])) {
-                    /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                    /** @var FilesystemAdapter $disk */
                     $disk = Storage::disk($this->disk);
 
                     return $disk->mimetype($this->filename);

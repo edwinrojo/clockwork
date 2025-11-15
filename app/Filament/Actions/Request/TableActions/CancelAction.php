@@ -3,9 +3,9 @@
 namespace App\Filament\Actions\Request\TableActions;
 
 use App\Enums\RequestStatus;
+use Filament\Actions\Action;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 
 class CancelAction extends Action

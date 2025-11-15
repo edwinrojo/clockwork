@@ -4,14 +4,17 @@ namespace App\Filament\Manager\Resources\TimesheetResource\Pages;
 
 use App\Filament\Manager\Resources\TimesheetResource;
 use App\Jobs\CertifyTimesheets;
+use App\Models\Employee;
 use App\Models\Timesheet;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Forms;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\ViewField;
 use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Js;
@@ -29,11 +32,11 @@ class VerifyTimesheets extends Page
 
     protected static string $resource = TimesheetResource::class;
 
-    protected static string $view = 'filament.manager.resources.timesheet-resource.pages.verify-timesheets';
+    protected string $view = 'filament.manager.resources.timesheet-resource.pages.verify-timesheets';
 
     public static function canAccess(array $parameters = []): bool
     {
-        return in_array(Filament::getCurrentPanel()->getId(), ['director', 'leader']) &&
+        return in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'leader']) &&
             parent::canAccess($parameters) &&
             request()->hasValidSignature();
     }
@@ -75,7 +78,7 @@ class VerifyTimesheets extends Page
                 ->send();
         }
 
-        CertifyTimesheets::dispatch(array_keys(array_filter($data)), Filament::getCurrentPanel()->getId(), Auth::id());
+        CertifyTimesheets::dispatch(array_keys(array_filter($data)), Filament::getCurrentOrDefaultPanel()->getId(), Auth::id());
 
         Notification::make()
             ->title('Timesheet verification in progress')
@@ -86,7 +89,7 @@ class VerifyTimesheets extends Page
         return $this->redirect(static::getResource()::getUrl());
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
         try {
             $decrypted = decrypt($this->timesheets);
@@ -99,7 +102,7 @@ class VerifyTimesheets extends Page
         }
 
         $timesheets = Timesheet::find($decrypted)->map(function (Timesheet $timesheet) {
-            $panel = Filament::getCurrentPanel()->getId();
+            $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
             $help = match (true) {
                 $timesheet->export->signers->contains(fn ($sign) => $sign->meta === $panel) => 'Already verified.',
@@ -108,14 +111,14 @@ class VerifyTimesheets extends Page
                 default => null,
             };
 
-            return Forms\Components\Group::make([
-                Forms\Components\Checkbox::make($timesheet->id)
+            return Group::make([
+                Checkbox::make($timesheet->id)
                     ->disabled($help !== null)
                     ->helperText($help !== null ? "$help (skipping)" : null)
                     ->label("{$timesheet->employee->name} ({$timesheet->period})"),
-                Forms\Components\Group::make([
-                    Forms\Components\Group::make([
-                        Forms\Components\ViewField::make('preview')
+                Group::make([
+                    Group::make([
+                        ViewField::make('preview')
                             ->dehydrated(false)
                             ->view('filament.validation.pages.csc', [
                                 'timesheets' => [$timesheet->setSpan($timesheet->span)],
@@ -126,7 +129,7 @@ class VerifyTimesheets extends Page
                                 'title' => 'Timesheet',
                             ]),
                     ])->columnSpan(2),
-                    Forms\Components\ViewField::make('attachments')
+                    ViewField::make('attachments')
                         ->dehydrated(false)
                         ->columnSpan(3)
                         ->view('filament.validation.pages.attachments', [
@@ -136,17 +139,17 @@ class VerifyTimesheets extends Page
             ]);
         });
 
-        return $form
+        return $schema
             ->statePath('data')
             ->schema(array_merge($timesheets->toArray(), [
-                Forms\Components\Checkbox::make('confirmation')
+                Checkbox::make('confirmation')
                     ->markAsRequired()
                     ->accepted()
                     ->extraAttributes(['class' => 'self-start mt-1'])
                     ->validationMessages(['accepted' => 'You must certify first.'])
                     ->dehydrated(false)
                     ->rule(fn () => function ($attribute, $value, $fail) {
-                        /** @var \App\Models\Employee */
+                        /** @var Employee */
                         $user = Auth::user();
 
                         if ($user->signature === null || $user->signature->certificate === null || $user->signature->password === null) {

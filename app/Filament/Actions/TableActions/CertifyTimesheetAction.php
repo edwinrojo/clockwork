@@ -4,12 +4,13 @@ namespace App\Filament\Actions\TableActions;
 
 use App\Actions\CertifyTimesheet;
 use App\Models\Timesheet;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
-use Filament\Tables\Actions\Action;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,7 +20,7 @@ class CertifyTimesheetAction extends Action
 
     protected function setUp(): void
     {
-        $this->level = match (Filament::getCurrentPanel()->getId()) {
+        $this->level = match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'director' => 'director',
             'leader' => 'leader',
             default => false,
@@ -78,7 +79,7 @@ class CertifyTimesheetAction extends Action
                 ->rule(fn () => function ($attribute, $value, $fail) use ($record) {
                     $user = user();
 
-                    $panel = Filament::getCurrentPanel()->getId();
+                    $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
                     if ($user->signature === null || $user->signature->certificate === null || $user->signature->password === null) {
                         return $fail('You must have to configure your digital signature first.');
@@ -109,11 +110,11 @@ class CertifyTimesheetAction extends Action
                 Tabs::make('Timesheet')
                     ->contained(false)
                     ->tabs([
-                        Tabs\Tab::make('Timesheet')
+                        Tab::make('Timesheet')
                             ->schema([
                                 $preview,
                             ]),
-                        Tabs\Tab::make('Attachments')
+                        Tab::make('Attachments')
                             ->schema([
                                 $attachments,
                             ]),

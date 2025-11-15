@@ -4,12 +4,12 @@ namespace App\Filament\Validation\Pages;
 
 use App\Models\Export;
 use Filament\Actions\Action;
-use Filament\Infolists\Components\Group;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Pages\Dashboard;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontFamily;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,7 +22,7 @@ class Home extends Dashboard
 
     protected static bool $shouldRegisterNavigation = false;
 
-    protected static string $view = 'filament.validation.pages.home';
+    protected string $view = 'filament.validation.pages.home';
 
     protected static ?string $navigationLabel = 'Home';
 
@@ -33,9 +33,9 @@ class Home extends Dashboard
         $this->export = Export::find($request->get('q'));
     }
 
-    public function getMaxContentWidth(): MaxWidth
+    public function getMaxContentWidth(): Width
     {
-        return MaxWidth::TwoExtraLarge;
+        return Width::TwoExtraLarge;
     }
 
     public function getHeading(): string|Htmlable
@@ -59,9 +59,9 @@ class Home extends Dashboard
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->record($this->export)
             ->columns(3)
             ->schema([

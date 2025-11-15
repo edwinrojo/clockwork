@@ -2,7 +2,7 @@
 
 namespace App\Filament\Actions;
 
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 
 class FlushTimelogsAction extends Action
 {

@@ -4,15 +4,19 @@ namespace App\Filament\Superuser\Resources;
 
 use App\Enums\TimelogMode;
 use App\Enums\TimelogState;
-use App\Filament\Superuser\Resources\TimelogResource\Pages;
+use App\Filament\Superuser\Resources\TimelogResource\Pages\ListTimelogs;
 use App\Models\Timelog;
+use Filament\Actions\BulkActionGroup;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 
@@ -20,9 +24,9 @@ class TimelogResource extends Resource
 {
     protected static ?string $model = Timelog::class;
 
-    protected static ?string $navigationIcon = 'gmdi-alarm-on-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-alarm-on-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -34,29 +38,29 @@ class TimelogResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('scanner.name')
+                TextColumn::make('scanner.name')
                     ->searchable(isIndividual: true, isGlobal: false)
                     ->sortable()
                     ->extraAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('employee.name')
+                TextColumn::make('employee.name')
                     ->placeholder('Unknown')
                     ->searchable(isIndividual: true, isGlobal: false),
-                Tables\Columns\TextColumn::make('uid')
+                TextColumn::make('uid')
                     ->label('UID')
                     ->searchable(query: fn ($query, $search) => $query->whereUid($search), isIndividual: true, isGlobal: false),
-                Tables\Columns\TextColumn::make('time')
+                TextColumn::make('time')
                     ->searchable(isIndividual: true, isGlobal: false)
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable()
                     ->extraAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('state'),
-                Tables\Columns\TextColumn::make('mode'),
+                TextColumn::make('state'),
+                TextColumn::make('mode'),
             ])
             ->filters([
-                Tables\Filters\Filter::make('time')
+                Filter::make('time')
                     ->columnSpanFull()
                     ->columns(2)
-                    ->form([
+                    ->schema([
                         DateTimePicker::make('from')
                             ->seconds(false),
                         DateTimePicker::make('until')
@@ -81,20 +85,20 @@ class TimelogResource extends Resource
 
                         return $indicators;
                     }),
-                Tables\Filters\SelectFilter::make('scanner')
+                SelectFilter::make('scanner')
                     ->relationship('scanner', 'name')
                     ->searchable()
                     ->multiple()
                     ->preload(),
-                Tables\Filters\SelectFilter::make('mode')
+                SelectFilter::make('mode')
                     ->options(TimelogMode::class)
                     ->multiple()
                     ->searchable(),
-                Tables\Filters\SelectFilter::make('state')
+                SelectFilter::make('state')
                     ->options(TimelogState::class)
                     ->multiple()
                     ->searchable(),
-                Tables\Filters\TernaryFilter::make('unknown')
+                TernaryFilter::make('unknown')
                     ->label('Unknown')
                     ->placeholder('All')
                     ->trueLabel('Records from unknown')
@@ -105,17 +109,17 @@ class TimelogResource extends Resource
                     )
                     ->native(false),
             ], FiltersLayout::AboveContent)
-            ->actions([
+            ->recordActions([
 
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+            ->toolbarActions([
+                BulkActionGroup::make([
 
                 ]),
             ])
             ->deferLoading()
             ->defaultSort('time', 'desc')
-            ->filtersFormWidth(MaxWidth::ThreeExtraLarge)
+            ->filtersFormWidth(Width::ThreeExtraLarge)
             ->filtersFormColumns(2);
     }
 
@@ -129,7 +133,7 @@ class TimelogResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimelogs::route('/'),
+            'index' => ListTimelogs::route('/'),
         ];
     }
 }

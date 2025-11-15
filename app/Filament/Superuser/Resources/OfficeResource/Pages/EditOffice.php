@@ -5,7 +5,9 @@ namespace App\Filament\Superuser\Resources\OfficeResource\Pages;
 use App\Actions\OptimizeImage;
 use App\Filament\Superuser\Resources\OfficeResource;
 use App\Models\Deployment;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditOffice extends EditRecord
@@ -58,9 +60,9 @@ class EditOffice extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            DeleteAction::make(),
+            ForceDeleteAction::make(),
+            RestoreAction::make(),
         ];
     }
 }

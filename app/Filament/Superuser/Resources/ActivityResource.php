@@ -2,59 +2,61 @@
 
 namespace App\Filament\Superuser\Resources;
 
-use App\Filament\Superuser\Resources\ActivityResource\Pages;
+use App\Filament\Superuser\Resources\ActivityResource\Pages\ListActivities;
 use App\Models\Activity;
 use App\Models\Scanner;
 use App\Models\User;
-use Filament\Infolists;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class ActivityResource extends Resource
 {
     protected static ?string $model = Activity::class;
 
-    protected static ?string $navigationIcon = 'gmdi-monitor-heart-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-monitor-heart-o';
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Time')
                     ->dateTime(),
-                Tables\Columns\TextColumn::make('user.name')
+                TextColumn::make('user.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('activitable_type')
+                TextColumn::make('activitable_type')
                     ->label('Resource')
                     ->getStateUsing(fn (Activity $record) => $record->activitable ? class_basename($record->activitable::class) : '')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('activitable.name')
+                TextColumn::make('activitable.name')
                     ->label('Name')
                     ->getStateUsing(fn (Activity $record) => $record->activitable ? $record->activitable->name : '???')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('data.action')
+                TextColumn::make('data.action')
                     ->label('Action')
                     ->searchable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('activitable_type')
+                SelectFilter::make('activitable_type')
                     ->options([
                         Scanner::class => 'Scanner',
                         User::class => 'User',
                     ])
                     ->label('Resource')
                     ->searchable(),
-                Tables\Filters\SelectFilter::make('user')
+                SelectFilter::make('user')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload(),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->infolist([
-                        Infolists\Components\KeyValueEntry::make('data')
+            ->recordActions([
+                ViewAction::make()
+                    ->schema([
+                        KeyValueEntry::make('data')
                             ->hiddenLabel()
                             ->keyLabel('Identifier')
                             ->valueLabel('Data')
@@ -83,7 +85,7 @@ class ActivityResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListActivities::route('/'),
+            'index' => ListActivities::route('/'),
         ];
     }
 }

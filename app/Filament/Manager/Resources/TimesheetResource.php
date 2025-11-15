@@ -7,17 +7,23 @@ use App\Filament\Actions\TableActions\BulkAction\DownloadTimesheetBulkAction;
 use App\Filament\Actions\TableActions\DownloadTimesheetAction;
 use App\Filament\Filters\OfficeFilter;
 use App\Filament\Filters\StatusFilter;
-use App\Filament\Manager\Resources\TimesheetResource\Pages;
+use App\Filament\Manager\Resources\TimesheetResource\Pages\ListTimesheets;
+use App\Filament\Manager\Resources\TimesheetResource\Pages\VerifyTimesheets;
 use App\Models\Employee;
 use App\Models\Timesheet;
 use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -27,9 +33,9 @@ class TimesheetResource extends Resource
 {
     protected static ?string $model = Timesheet::class;
 
-    protected static ?string $navigationIcon = 'gmdi-document-scanner-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-document-scanner-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -49,16 +55,16 @@ class TimesheetResource extends Resource
                 ]);
             })
             ->columns([
-                Tables\Columns\TextColumn::make('employee.uid')
+                TextColumn::make('employee.uid')
                     ->label('UID')
-                    ->visible(fn () => in_array(Filament::getCurrentPanel()->getId(), ['manager']))
+                    ->visible(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['manager']))
                     ->extraCellAttributes(['class' => 'uppercase'])
                     ->searchable(query: fn (Builder $query, string $search) => $query->whereHas('employee', fn ($query) => $query->where('uid', 'like', "$search")))
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('employee.name')
+                TextColumn::make('employee.name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('employee.status')
+                TextColumn::make('employee.status')
                     ->label('Status')
                     ->limit(24)
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -69,10 +75,10 @@ class TimesheetResource extends Resource
                                 return $status->append(" ({$record->employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('employee.offices.code')
+                TextColumn::make('employee.offices.code')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->visible(fn () => in_array(Filament::getCurrentPanel()->getId(), ['manager']))
+                    ->visible(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['manager']))
                     ->formatStateUsing(function (Timesheet $record) {
                         $offices = $record->employee->offices->map(function ($office) {
                             return str($office->code)
@@ -85,45 +91,45 @@ class TimesheetResource extends Resource
 
                         return str($offices)->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('period')
+                TextColumn::make('period')
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('month', $direction)->orderBy('span'))
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('days')
+                TextColumn::make('days')
                     ->state(fn (Timesheet $record) => $record->days ?: null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('undertime')
+                TextColumn::make('undertime')
                     ->state(fn (Timesheet $record) => $record->undertime ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->undertime ? $record->getUndertime(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('overtime')
+                TextColumn::make('overtime')
                     ->state(fn (Timesheet $record) => $record->overtime ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->overtime ? $record->getOvertime(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('missed')
+                TextColumn::make('missed')
                     ->state(fn (Timesheet $record) => $record->missed ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->missed ? $record->getMissed(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('export.created_at')
+                TextColumn::make('export.created_at')
                     ->label('Employee Certified')
                     ->since()
                     ->dateTimeTooltip(),
-                Tables\Columns\TextColumn::make('leaderSigner.created_at')
+                TextColumn::make('leaderSigner.created_at')
                     ->label(str(settings('leader') ?? 'leader')->title())
                     ->since()
                     ->dateTimeTooltip(),
-                Tables\Columns\TextColumn::make('directorSigner.created_at')
+                TextColumn::make('directorSigner.created_at')
                     ->label(str(settings('director') ?? 'director')->title())
                     ->since()
                     ->dateTimeTooltip(),
@@ -131,10 +137,10 @@ class TimesheetResource extends Resource
             ->filters([
                 OfficeFilter::make()
                     ->relationship('employee')
-                    ->hidden(fn () => in_array(Filament::getCurrentPanel()->getId(), ['director', 'leader'])),
-                Tables\Filters\Filter::make('month')
-                    ->form([
-                        Forms\Components\TextInput::make('month')
+                    ->hidden(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'leader'])),
+                Filter::make('month')
+                    ->schema([
+                        TextInput::make('month')
                             ->type('month'),
                     ])
                     ->query(function (Builder $query, array $data) {
@@ -147,9 +153,9 @@ class TimesheetResource extends Resource
 
                         return 'Month: '.Carbon::parse($data['month'])->format('F Y');
                     }),
-                Tables\Filters\Filter::make('period')
-                    ->form([
-                        Forms\Components\Select::make('period')
+                Filter::make('period')
+                    ->schema([
+                        Select::make('period')
                             ->placeholder('All')
                             ->options([
                                 '1st' => 'First half',
@@ -178,16 +184,16 @@ class TimesheetResource extends Resource
                     ->columns(2)
                     ->single(),
             ], FiltersLayout::AboveContent)
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('notify')
-                        ->visible(fn () => in_array(Filament::getCurrentPanel()->getId(), ['director', 'leader']))
+            ->recordActions([
+                ActionGroup::make([
+                    Action::make('notify')
+                        ->visible(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'leader']))
                         ->requiresConfirmation()
                         ->icon('heroicon-o-bell')
                         ->modalIcon('heroicon-o-bell')
                         ->modalDescription('Notify the employee about their timesheet. This does nothing but send a notification.')
-                        ->form([
-                            Forms\Components\Select::make('type')
+                        ->schema([
+                            Select::make('type')
                                 ->label('Type')
                                 ->placeholder('Select a type')
                                 ->options([
@@ -197,7 +203,7 @@ class TimesheetResource extends Resource
                                     'danger' => 'Error',
                                 ])
                                 ->required(),
-                            Forms\Components\Textarea::make('message')
+                            Textarea::make('message')
                                 ->label('Message')
                                 ->placeholder('Enter a message')
                                 ->rule('required')
@@ -229,11 +235,11 @@ class TimesheetResource extends Resource
                                 ->send();
                         }),
                     DownloadTimesheetAction::make()
-                        ->visible(fn () => in_array(Filament::getCurrentPanel()->getId(), ['director', 'leader']))
+                        ->visible(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['director', 'leader']))
                         ->label('Download'),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 DownloadTimesheetBulkAction::make(),
                 BulkActionCertifyTimesheetAction::make()
                     ->label('Verify'),
@@ -253,8 +259,8 @@ class TimesheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimesheets::route('/'),
-            'verify' => Pages\VerifyTimesheets::route('verify'),
+            'index' => ListTimesheets::route('/'),
+            'verify' => VerifyTimesheets::route('verify'),
         ];
     }
 
@@ -267,7 +273,7 @@ class TimesheetResource extends Resource
 
             $query->whereHas('employee');
 
-            $panel = Filament::getCurrentPanel()->getId();
+            $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
             $query->when($panel === 'director', function ($query) {
                 $query->where(function ($query) {

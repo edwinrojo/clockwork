@@ -5,7 +5,7 @@ namespace App\Filament\Actions;
 use App\Enums\UserRole;
 use App\Jobs\ImportData;
 use Filament\Actions\Action;
-use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -35,8 +35,8 @@ class ImportDataAction extends Action
             return str($html)->toHtmlString();
         });
 
-        $this->form([
-            Forms\Components\FileUpload::make('file')
+        $this->schema([
+            FileUpload::make('file')
                 ->acceptedFileTypes(['text/csv', 'text/x-csv', 'application/csv', 'application/x-csv', 'text/comma-separated-values', 'text/x-comma-separated-values', 'text/plain'])
                 ->placeholder('Upload data from CSV file')
                 ->storeFiles(false)

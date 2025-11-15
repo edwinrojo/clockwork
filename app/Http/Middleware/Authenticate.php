@@ -14,7 +14,7 @@ class Authenticate extends Middleware
      */
     protected function authenticate($request, array $guards): void
     {
-        $panel = Filament::getCurrentPanel();
+        $panel = Filament::getCurrentOrDefaultPanel();
 
         $id = $panel?->getId();
 

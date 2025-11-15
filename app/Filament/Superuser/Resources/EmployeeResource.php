@@ -7,18 +7,36 @@ use App\Enums\EmploymentSubstatus;
 use App\Filament\Filters\ActiveFilter;
 use App\Filament\Filters\OfficeFilter;
 use App\Filament\Filters\StatusFilter;
-use App\Filament\Superuser\Resources\EmployeeResource\Pages;
+use App\Filament\Superuser\Resources\EmployeeResource\Pages\CreateEmployee;
+use App\Filament\Superuser\Resources\EmployeeResource\Pages\EditEmployee;
+use App\Filament\Superuser\Resources\EmployeeResource\Pages\ListEmployees;
 use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\GroupsRelationManager;
 use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\OfficesRelationManager;
 use App\Filament\Superuser\Resources\EmployeeResource\RelationManagers\ScannersRelationManager;
 use App\Models\Employee;
 use App\Models\Scopes\ActiveScope;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -28,7 +46,7 @@ class EmployeeResource extends Resource
 {
     protected static ?string $model = Employee::class;
 
-    protected static ?string $navigationIcon = 'gmdi-badge-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-badge-o';
 
     protected static ?string $recordTitleAttribute = 'full_name';
 
@@ -37,11 +55,11 @@ class EmployeeResource extends Resource
         $isCalledBySelf = @debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['class'] === get_called_class();
 
         return [
-            Forms\Components\Section::make('Personal Information')
+            Section::make('Personal Information')
                 ->compact($compact)
                 ->columns(2)
                 ->schema([
-                    Forms\Components\TextInput::make('last_name')
+                    TextInput::make('last_name')
                         ->helperText('Family name or surname of the employee.')
                         ->minLength(2)
                         ->markAsRequired()
@@ -72,7 +90,7 @@ class EmployeeResource extends Resource
                                 $fail('This exact employee already exists.');
                             }
                         }),
-                    Forms\Components\TextInput::make('first_name')
+                    TextInput::make('first_name')
                         ->helperText('Given name or forename of the employee.')
                         ->minLength(2)
                         ->markAsRequired()
@@ -103,24 +121,24 @@ class EmployeeResource extends Resource
                                 $fail('This exact employee already exists.');
                             }
                         }),
-                    Forms\Components\TextInput::make('middle_name')
+                    TextInput::make('middle_name')
                         ->helperText('Middle name or additional name of the employee usually derived from the mother\'s maiden name.')
                         ->visibleOn('view'),
-                    Forms\Components\TextInput::make('middle_name')
+                    TextInput::make('middle_name')
                         ->helperText('Middle name or additional name of the employee usually derived from the mother\'s maiden name.')
                         ->hintAction(
-                            Forms\Components\Actions\Action::make('na')
+                            Action::make('na')
                                 ->label('n/a')
                                 ->icon('heroicon-o-no-symbol')
                                 ->extraAttributes(['tabindex' => -1])
-                                ->action(fn (Forms\Set $set) => $set('middle_name', 'N/A'))
+                                ->action(fn (Set $set) => $set('middle_name', 'N/A'))
                         )
                         ->dehydrateStateUsing(fn ($state) => $state === 'N/A' ? '' : $state)
                         ->markAsRequired()
                         ->rules('required')
                         ->hiddenOn('view')
                         ->minLength(2),
-                    Forms\Components\Select::make('qualifier_name')
+                    Select::make('qualifier_name')
                         ->helperText('Qualifier name or name extension to distinguish an individual from others who may have the same name.')
                         ->options([
                             'N/A' => 'N/A',
@@ -138,37 +156,37 @@ class EmployeeResource extends Resource
                         ])
                         ->in(['N/A', 'Jr', 'Sr', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'])
                         ->hintAction(
-                            Forms\Components\Actions\Action::make('na')
+                            Action::make('na')
                                 ->label('n/a')
                                 ->icon('heroicon-o-no-symbol')
                                 ->extraAttributes(['tabindex' => -1])
-                                ->action(fn (Forms\Set $set) => $set('qualifier_name', 'N/A'))
+                                ->action(fn (Set $set) => $set('qualifier_name', 'N/A'))
                         )
                         ->dehydrateStateUsing(fn ($state) => $state === 'N/A' ? '' : $state)
                         ->markAsRequired()
                         ->rules('required'),
-                    Forms\Components\TextInput::make('prefix_name')
+                    TextInput::make('prefix_name')
                         ->label('Name prefix')
                         ->helperText('Prefix or title of the employee e.g. Atty., Engr., Dr., Fr., etc.')
                         ->minLength(2)
                         ->markAsRequired(),
-                    Forms\Components\TextInput::make('suffix_name')
+                    TextInput::make('suffix_name')
                         ->label('Name suffix')
                         ->helperText('Suffix or honorific of the employee e.g. Ph.D., M.D., MIT, MBA, MPA, etc.')
                         ->minLength(2)
                         ->markAsRequired(),
-                    Forms\Components\DatePicker::make('birthdate'),
-                    Forms\Components\Select::make('sex')
+                    DatePicker::make('birthdate'),
+                    Select::make('sex')
                         ->options(['male' => 'Male', 'female' => 'Female']),
                 ]),
-            Forms\Components\Section::make('Employment Details')
+            Section::make('Employment Details')
                 ->compact($compact)
                 ->columns(6)
                 ->schema([
-                    Forms\Components\TextInput::make('designation')
+                    TextInput::make('designation')
                         // ->requiredWith('status')
                         ->columnSpan(2),
-                    Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->options(EmploymentStatus::class)
                         ->afterStateUpdated(fn (callable $set) => $set('substatus', ''))
                         ->dehydrateStateUsing(fn ($state) => empty(trim($state)) ? '' : $state)
@@ -177,24 +195,24 @@ class EmployeeResource extends Resource
                         ->searchable()
                         ->columnSpan(2)
                         ->live(),
-                    Forms\Components\Select::make('substatus')
+                    Select::make('substatus')
                         ->options(EmploymentSubstatus::class)
                         ->requiredIf('status', EmploymentStatus::CONTRACTUAL->value)
                         ->prohibitedUnless('status', EmploymentStatus::CONTRACTUAL->value)
                         ->disableOptionWhen(fn (string $value) => $value === EmploymentSubstatus::NONE->value)
-                        ->hidden(fn (Forms\Get $get) => $get('status') !== EmploymentStatus::CONTRACTUAL->value)
+                        ->hidden(fn (Get $get) => $get('status') !== EmploymentStatus::CONTRACTUAL->value)
                         ->dehydrateStateUsing(fn ($state) => empty(trim($state)) ? '' : $state)
                         ->dehydratedWhenHidden()
                         ->searchable()
                         ->columnSpan(2),
                 ]),
-            Forms\Components\Section::make('Account Settings')
+            Section::make('Account Settings')
                 ->visible($isCalledBySelf)
                 ->columns(3)
                 ->schema([
-                    Forms\Components\TextInput::make('uid')
+                    TextInput::make('uid')
                         ->visibleOn('view'),
-                    Forms\Components\TextInput::make('uid')
+                    TextInput::make('uid')
                         ->label('UID')
                         ->helperText('This eight character UID will be used to uniquely identify the employee across interconnected systems.')
                         ->minLength(8)
@@ -212,10 +230,10 @@ class EmployeeResource extends Resource
                             'regex' => 'The :attribute must be in the format of five letters followed by three numbers e.g. abcde123 (except abcde123).',
                         ])
                         ->hintAction(
-                            Forms\Components\Actions\Action::make('generate')
+                            Action::make('generate')
                                 ->label('Generate')
                                 ->icon('heroicon-o-arrow-path')
-                                ->action(function (Forms\Set $set) {
+                                ->action(function (Set $set) {
                                     $valid = function (string $uid): bool {
                                         return Employee::whereUid($uid)->doesntExist();
                                     };
@@ -223,12 +241,12 @@ class EmployeeResource extends Resource
                                     $set('uid', strtolower(fake()->valid($valid)->bothify('?????###')));
                                 })
                         ),
-                    Forms\Components\TextInput::make('email')
+                    TextInput::make('email')
                         ->rule('email:rfc,strict,dns,spoof,filter')
                         ->rule('required', fn (?Employee $record) => isset($record) && ! empty($record->email))
                         ->markAsRequired(fn (?Employee $record) => isset($record) && ! empty($record->email))
                         ->helperText('The email address will be used for account recovery, notifications, and other communication purposes.'),
-                    Forms\Components\ToggleButtons::make('active')
+                    ToggleButtons::make('active')
                         ->boolean()
                         ->inline()
                         ->grouped()
@@ -238,20 +256,20 @@ class EmployeeResource extends Resource
         ];
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema(static::formSchema());
+        return $schema->schema(static::formSchema());
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('offices.code')
+                TextColumn::make('offices.code')
                     ->formatStateUsing(function (Employee $record) {
                         $offices = $record->offices->map(function ($office) {
                             return str($office->code)
@@ -264,7 +282,7 @@ class EmployeeResource extends Resource
 
                         return str($offices)->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->getStateUsing(function (Employee $employee): string {
                         return str($employee->status?->value)
@@ -273,21 +291,21 @@ class EmployeeResource extends Resource
                                 return $status->append(" ({$employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('undeployed')
+                TernaryFilter::make('undeployed')
                     ->attribute('office_id')
                     ->trueLabel('No')
                     ->falseLabel('Yes')
@@ -299,34 +317,34 @@ class EmployeeResource extends Resource
                     ),
                 OfficeFilter::make(),
                 StatusFilter::make(),
-                Tables\Filters\SelectFilter::make('groups')
+                SelectFilter::make('groups')
                     ->multiple()
                     ->searchable()
                     ->relationship('groups', 'name')
                     ->preload(),
                 ActiveFilter::make(),
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()->slideOver(),
+            ->recordActions([
+                EditAction::make()->slideOver(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('Set active state')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('Set active state')
                         ->color('warning')
                         ->requiresConfirmation()
                         ->groupedIcon('heroicon-o-check-circle')
-                        ->form([
-                            Forms\Components\Section::make([
-                                Forms\Components\Radio::make('active')
+                        ->schema([
+                            Section::make([
+                                Radio::make('active')
                                     ->boolean()
                                     ->inline()
                                     ->inlineLabel(false)
                                     ->required(),
                             ]),
                         ])
-                        ->action(function (Tables\Actions\BulkAction $action, Collection $records, array $data) {
+                        ->action(function (BulkAction $action, Collection $records, array $data) {
                             $records->toQuery()->update(['active' => $data['active']]);
 
                             $action->deselectRecordsAfterCompletion();
@@ -339,9 +357,9 @@ class EmployeeResource extends Resource
                                 ->body($records->count()." $label has been set to ".($data['active'] ? 'active' : 'inactive').'.')
                                 ->send();
                         }),
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->deferLoading()
@@ -360,9 +378,9 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
-            'create' => Pages\CreateEmployee::route('/create'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'index' => ListEmployees::route('/'),
+            'create' => CreateEmployee::route('/create'),
+            'edit' => EditEmployee::route('/{record}/edit'),
         ];
     }
 

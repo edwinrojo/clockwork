@@ -6,7 +6,7 @@ use App\Models\Export;
 use App\Models\User;
 use App\Services\TimesheetExporter;
 use Exception;
-use Filament\Notifications\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;

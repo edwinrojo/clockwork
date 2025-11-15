@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\Social;
 use DutchCodingCompany\FilamentSocialite\Events\Login;
 use DutchCodingCompany\FilamentSocialite\Events\RegistrationNotEnabled;
@@ -19,6 +20,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Contracts\User;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\AbstractProvider;
+use Laravel\Socialite\Two\FacebookProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 class OauthController extends SocialiteLoginController
@@ -31,7 +34,7 @@ class OauthController extends SocialiteLoginController
             return $this->redirectToLogin('You are not authorized to access this page.');
         }
 
-        /** @var \Laravel\Socialite\Two\AbstractProvider|\Laravel\Socialite\Two\FacebookProvider $driver */
+        /** @var AbstractProvider|FacebookProvider $driver */
         $driver = Socialite::driver($provider);
 
         $response = $driver
@@ -171,7 +174,7 @@ class OauthController extends SocialiteLoginController
     protected function getModel(): string
     {
         return match (session()->get('guard')) {
-            'employee' => \App\Models\Employee::class,
+            'employee' => Employee::class,
             default => \App\Models\User::class,
         };
     }

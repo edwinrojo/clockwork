@@ -24,15 +24,16 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\Dashboard\Actions\FilterAction;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -58,15 +59,15 @@ class ViewTimesheet extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist
             ->schema([
-                Infolists\Components\Group::make()
+                Group::make()
                     ->columnSpanFull()
                     ->columns(12)
                     ->schema([
-                        Infolists\Components\TextEntry::make('timesheet')
+                        TextEntry::make('timesheet')
                             ->columnSpan(5)
                             ->formatStateUsing(function (): View {
                                 $period = isset($this->filters['period'])
@@ -79,7 +80,7 @@ class ViewTimesheet extends ViewRecord
                                     'month' => false,
                                 ]);
                             }),
-                        Infolists\Components\TextEntry::make('timelogs')
+                        TextEntry::make('timelogs')
                             ->columnSpan(7)
                             ->formatStateUsing(function (): View {
                                 $period = isset($this->filters['period'])
@@ -102,7 +103,7 @@ class ViewTimesheet extends ViewRecord
                                 ]);
                             }),
                     ]),
-                Infolists\Components\TextEntry::make('scanners')
+                TextEntry::make('scanners')
                     ->columnSpanFull()
                     ->state(function () {
                         $scanners = $this->record->employee->scanners()
@@ -124,20 +125,20 @@ class ViewTimesheet extends ViewRecord
                             ->wrap('<span>', '</span>')
                             ->toHtmlString();
                     }),
-                Infolists\Components\Group::make([
-                    Infolists\Components\TextEntry::make('days')
+                Group::make([
+                    TextEntry::make('days')
                         ->label('Days'),
-                    Infolists\Components\TextEntry::make('overtime')
+                    TextEntry::make('overtime')
                         ->label('Overtime')
                         ->state(function (Timesheet $record) {
                             return $record->getOvertime(true);
                         }),
-                    Infolists\Components\TextEntry::make('undertime')
+                    TextEntry::make('undertime')
                         ->label('Undertime')
                         ->state(function (Timesheet $record) {
                             return $record->getUndertime(true);
                         }),
-                    Infolists\Components\TextEntry::make('missed')
+                    TextEntry::make('missed')
                         ->label('Missed')
                         ->state(function (Timesheet $record) {
                             return $record->getMissed(true);
@@ -173,7 +174,7 @@ class ViewTimesheet extends ViewRecord
         return FilterAction::make()
             ->color('primary')
             ->iconButton()
-            ->form([
+            ->schema([
                 Select::make('period')
                     ->options(TimesheetPeriod::class)
                     ->default(TimesheetPeriod::FULL),
@@ -195,7 +196,7 @@ class ViewTimesheet extends ViewRecord
                 return $record->export()->exists()
                     ?: $record->timesheets()->where('span', '1st')->exists() && $record->timesheets()->where('span', '2nd')->exists();
             })
-            ->form([
+            ->schema([
                 DatePicker::make('date')
                     ->reactive()
                     ->dehydrated(false)
@@ -367,7 +368,7 @@ class ViewTimesheet extends ViewRecord
             ->visible(fn () => Auth::user()->signature?->certificate)
             ->successNotificationTitle('Timesheet certification process initiated.')
             ->hidden(function (Timesheet $record) {
-                /** @var \App\Models\Employee */
+                /** @var Employee */
                 $user = Auth::user();
 
                 return ! $user->signature()->exists() ?:
@@ -383,7 +384,7 @@ class ViewTimesheet extends ViewRecord
 
                 $component->sendSuccessNotification();
             })
-            ->form([
+            ->schema([
                 Tabs::make()
                     ->contained(false)
                     ->schema([
@@ -431,7 +432,7 @@ class ViewTimesheet extends ViewRecord
                                     ->validationMessages(['accepted' => 'You must certify first.'])
                                     ->dehydrated(false)
                                     ->rule(fn () => function ($attribute, $value, $fail) {
-                                        /** @var \App\Models\Employee */
+                                        /** @var Employee */
                                         $user = Auth::user();
 
                                         if ($user->signature === null || $user->signature->certificate === null || $user->signature->password === null) {
@@ -481,7 +482,7 @@ class ViewTimesheet extends ViewRecord
             ->fillForm(fn (Timesheet $record) => ['details' => [
                 ...$record->details,
             ]])
-            ->form([
+            ->schema([
                 Builder::make('details.annotations')
                     ->addActionLabel('Add annotation')
                     ->reorderable()

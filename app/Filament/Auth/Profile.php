@@ -3,17 +3,18 @@
 namespace App\Filament\Auth;
 
 use App\Actions\OptimizeImage;
+use App\Filament\Auth\Concerns\SocialOauthProviderLinker;
 use App\Traits\CanSendEmailVerification;
+use Filament\Auth\Pages\EditProfile;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Pages\Auth\EditProfile;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use LSNepomuceno\LaravelA1PdfSign\Exceptions\ProcessRunTimeException;
@@ -23,7 +24,7 @@ use SensitiveParameter;
 class Profile extends EditProfile
 {
     use CanSendEmailVerification;
-    use Concerns\SocialOauthProviderLinker;
+    use SocialOauthProviderLinker;
 
     protected function getForms(): array
     {
@@ -198,7 +199,7 @@ class Profile extends EditProfile
     protected function getRedirectUrl(): ?string
     {
         if ($this->getUser()->wasChanged('email')) {
-            return route('filament.'.Filament::getCurrentPanel()->getId().'.auth.email-verification.prompt');
+            return route('filament.'.Filament::getCurrentOrDefaultPanel()->getId().'.auth.email-verification.prompt');
         }
 
         return null;

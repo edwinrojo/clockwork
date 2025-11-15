@@ -11,9 +11,9 @@
         "php": "^8.2",
         "azure-oss/storage-blob-laravel": "^1.0",
         "codeat3/blade-google-material-design-icons": "^1.19",
-        "dutchcodingcompany/filament-socialite": "^2.3",
+        "dutchcodingcompany/filament-socialite": "^3.0",
         "fakerphp/faker": "^1.9.1",
-        "filament/filament": "^3.2",
+        "filament/filament": "^4.0",
         "guzzlehttp/guzzle": "^7.2",
         "intervention/image": "^3.11",
         "laravel/breeze": "^2.0",
@@ -43,6 +43,7 @@
         "webklex/laravel-pdfmerger": "*"
     },
     "require-dev": {
+        "filament/upgrade": "^4.0",
         "laravel/boost": "*",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.29",
@@ -101,6 +102,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "beta",
     "prefer-stable": true
 }

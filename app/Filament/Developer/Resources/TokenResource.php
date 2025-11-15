@@ -2,11 +2,14 @@
 
 namespace App\Filament\Developer\Resources;
 
-use App\Filament\Developer\Resources\TokenResource\Pages;
+use App\Filament\Developer\Resources\TokenResource\Pages\ListTokens;
 use App\Models\Token;
 use App\Models\User;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -14,27 +17,27 @@ class TokenResource extends Resource
 {
     protected static ?string $model = Token::class;
 
-    protected static ?string $navigationIcon = 'gmdi-token-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-token-o';
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Year'),
-                Tables\Columns\TextColumn::make('last_used_at')
+                TextColumn::make('last_used_at')
                     ->since(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->since(),
             ])
             ->filters([
             ])
-            ->actions([
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -49,7 +52,7 @@ class TokenResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTokens::route('/'),
+            'index' => ListTokens::route('/'),
         ];
     }
 

@@ -34,7 +34,7 @@ class NavigateTimesheetAction extends Action
 
         $this->modalDescription('Navigate to your timesheet for the selected month.');
 
-        $this->form([
+        $this->schema([
             TextInput::make('month')
                 ->type('month')
                 ->rule('required')

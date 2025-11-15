@@ -87,7 +87,7 @@ trait Requestable
     {
         return Attribute::make(
             function () {
-                $panel = Filament::getCurrentPanel()->getId();
+                $panel = Filament::getCurrentOrDefaultPanel()->getId();
 
                 if ($this::class === Schedule::class) {
                     if ($this->global) {

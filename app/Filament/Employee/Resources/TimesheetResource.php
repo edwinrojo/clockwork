@@ -3,14 +3,19 @@
 namespace App\Filament\Employee\Resources;
 
 use App\Filament\Actions\TableActions\DownloadTimesheetAction;
-use App\Filament\Employee\Resources\TimesheetResource\Pages;
+use App\Filament\Employee\Resources\TimesheetResource\Pages\ListTimesheets;
+use App\Filament\Employee\Resources\TimesheetResource\Pages\ViewTimesheet;
 use App\Models\Timesheet;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
-use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +26,7 @@ class TimesheetResource extends Resource
 {
     protected static ?string $model = Timesheet::class;
 
-    protected static ?string $navigationIcon = 'gmdi-document-scanner-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-document-scanner-o';
 
     protected static ?string $recordTitleAttribute = 'month';
 
@@ -41,11 +46,11 @@ class TimesheetResource extends Resource
     public static function tableFilters(): array
     {
         return [
-            Tables\Filters\Filter::make('year')
+            Filter::make('year')
                 ->query(fn ($query, array $data) => $query->when(is_numeric($data['year']), fn ($query) => $query->whereYear('month', $data['year'])))
                 ->indicateUsing(fn (array $data) => is_numeric($data['year']) ? 'Year: '.$data['year'] : null)
-                ->form([
-                    Forms\Components\Select::make('year')
+                ->schema([
+                    Select::make('year')
                         ->options(fn () => collect(range(now()->year, now()->year - 2, -1))->mapWithKeys(fn ($year) => [$year => $year]))
                         ->default(now()->year)
                         ->required()
@@ -59,67 +64,67 @@ class TimesheetResource extends Resource
         return $table
             ->filters(static::tableFilters())
             ->columns([
-                Tables\Columns\TextColumn::make('month')
+                TextColumn::make('month')
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->state(fn (Timesheet $record) => Carbon::parse($record->month)->format('M Y'))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('period')
+                TextColumn::make('period')
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy('month', $direction)->orderBy('span')),
-                Tables\Columns\TextColumn::make('days')
+                TextColumn::make('days')
                     ->state(fn (Timesheet $record) => $record->days ?: null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('undertime')
+                TextColumn::make('undertime')
                     ->state(fn (Timesheet $record) => $record->undertime ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->undertime ? $record->getUndertime(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('overtime')
+                TextColumn::make('overtime')
                     ->state(fn (Timesheet $record) => $record->overtime ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->overtime ? $record->getOvertime(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('missed')
+                TextColumn::make('missed')
                     ->state(fn (Timesheet $record) => $record->missed ?: null)
                     ->tooltip(fn (Timesheet $record) => $record->missed ? $record->getMissed(true) : null)
                     ->numeric()
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('export.created_at')
+                TextColumn::make('export.created_at')
                     ->label('Certified')
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
                     ->since()
                     ->dateTimeTooltip(),
-                Tables\Columns\TextColumn::make('leaderSigner.created_at')
+                TextColumn::make('leaderSigner.created_at')
                     ->label(str(settings('leader') ?? 'leader')->title())
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
                     ->since()
                     ->dateTimeTooltip(),
-                Tables\Columns\TextColumn::make('directorSigner.created_at')
+                TextColumn::make('directorSigner.created_at')
                     ->label(str(settings('director') ?? 'director')->title())
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
                     ->since()
                     ->dateTimeTooltip(),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
+            ->recordActions([
+                ActionGroup::make([
                     DownloadTimesheetAction::make()
                         ->label('Download')
                         ->color('gray')
                         ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly'),
-                    Tables\Actions\DeleteAction::make()
+                    DeleteAction::make()
                         ->hidden(fn (Timesheet $record) => $record->exports->isEmpty())
                         ->successNotificationTitle('Deleted successfully.')
                         ->modalDescription('This is a destructive action and will permanently delete this timesheet and all its certifications and or verifications.')
-                        ->form([
+                        ->schema([
                             TextInput::make('password')
                                 ->password()
                                 ->currentPassword()
@@ -133,7 +138,7 @@ class TimesheetResource extends Resource
                                 ->accepted()
                                 ->validationMessages(['accepted' => 'You must confirm that you understand the consequences of this action.']),
                         ])
-                        ->action(function (Tables\Actions\DeleteAction $action, Timesheet $record) {
+                        ->action(function (DeleteAction $action, Timesheet $record) {
                             if ($record->span === 'full') {
                                 $record->export->delete();
 
@@ -151,7 +156,7 @@ class TimesheetResource extends Resource
                         ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly'),
 
                 ]),
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->url(fn (Timesheet $record) => route('filament.employee.resources.timesheets.view', $record))
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Certified'),
             ])
@@ -164,8 +169,8 @@ class TimesheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimesheets::route('/'),
-            'view' => Pages\ViewTimesheet::route('/{record}'),
+            'index' => ListTimesheets::route('/'),
+            'view' => ViewTimesheet::route('/{record}'),
         ];
     }
 

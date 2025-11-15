@@ -5,8 +5,8 @@ namespace App\Filament\Actions\TableActions;
 use App\Filament\Actions\TableActions\BulkAction\ExportTimesheetAction;
 use App\Models\Employee;
 use App\Models\Timesheet;
-use Filament\Forms\Components\View;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\View;
 use Illuminate\Support\Carbon;
 
 class ViewTimesheetAction extends Action

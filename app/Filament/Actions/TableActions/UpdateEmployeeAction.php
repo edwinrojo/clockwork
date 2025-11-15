@@ -10,17 +10,16 @@ use App\Models\Group;
 use App\Models\Member;
 use App\Models\Office;
 use App\Models\Scanner;
-use Filament\Forms\Components\Group as FormGroup;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Tables\Actions\Action;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Facades\DB;
 
 class UpdateEmployeeAction extends Action
@@ -99,7 +98,7 @@ class UpdateEmployeeAction extends Action
                                 ->reorderable(false)
                                 ->addActionLabel('Add office')
                                 ->schema([
-                                    FormGroup::make()
+                                    \Filament\Schemas\Components\Group::make()
                                         ->columns(2)
                                         ->schema([
                                             Toggle::make('current')

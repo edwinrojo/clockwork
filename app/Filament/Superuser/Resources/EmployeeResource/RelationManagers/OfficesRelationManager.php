@@ -5,10 +5,18 @@ namespace App\Filament\Superuser\Resources\EmployeeResource\RelationManagers;
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Deployment;
 use App\Models\Office;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Validation\Rule;
 
@@ -18,11 +26,11 @@ class OfficesRelationManager extends RelationManager
 
     protected static ?string $title = 'Office Deployment';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('office_id')
+        return $schema
+            ->components([
+                Select::make('office_id')
                     ->live()
                     ->relationship('office', 'name')
                     ->searchable()
@@ -31,13 +39,13 @@ class OfficesRelationManager extends RelationManager
                     ->required()
                     ->columnSpanFull()
                     ->validationMessages(['unique' => 'Employee is already deployed to this office.'])
-                    ->afterStateUpdated(fn (Forms\Set $set) => $set('supervisor_id', null))
+                    ->afterStateUpdated(fn (Set $set) => $set('supervisor_id', null))
                     ->rules([
                         fn (?Deployment $record) => Rule::unique('deployment', 'office_id')
                             ->where('employee_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\Select::make('supervisor_id')
+                Select::make('supervisor_id')
                     ->relationship('supervisor', 'name', function ($query, $record, $get) {
                         if (! isset($record)) {
                             $query->whereHas('offices', function ($query) use ($get) {
@@ -65,7 +73,7 @@ class OfficesRelationManager extends RelationManager
                             ->where('employee_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
@@ -78,18 +86,18 @@ class OfficesRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('office.code')
+                TextColumn::make('office.code')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('supervisor.name')
+                TextColumn::make('supervisor.name')
                     ->formatStateUsing(fn ($record) => $record->supervisor?->titled_name)
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('current')
+                TextColumn::make('current')
                     ->getStateUsing(fn ($record) => $record->current ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->current ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -98,13 +106,13 @@ class OfficesRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->createAnother(false)
                     ->slideOver()
                     ->modalWidth('xl'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('Current')
+            ->recordActions([
+                Action::make('Current')
                     ->disabled(fn ($record) => $record->current)
                     ->requiresConfirmation()
                     ->icon('heroicon-o-check-badge')
@@ -115,16 +123,16 @@ class OfficesRelationManager extends RelationManager
 
                         $record->update(['current' => true]);
                     }),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation'),
                 ]),

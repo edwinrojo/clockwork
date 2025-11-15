@@ -14,7 +14,7 @@ class GroupPolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser', 'manager' => $user?->hasPermission(UserPermission::GROUP) ?? false,
             'secretary' => true,
             default => false,

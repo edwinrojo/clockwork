@@ -12,13 +12,13 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Get;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -70,7 +70,7 @@ class ListTimesheets extends ListRecords
             ->requiresConfirmation()
             ->modalIconColor('danger')
             ->modalDescription($generate->generateConfirmation())
-            ->form([
+            ->schema([
                 TextInput::make('month')
                     ->default(today()->day > 15 ? today()->startOfMonth()->format('Y-m') : today()->subMonth()->format('Y-m'))
                     ->type('month')
@@ -126,7 +126,7 @@ class ListTimesheets extends ListRecords
             ->modalWidth('lg')
             ->modalSubmitActionLabel('Download')
             ->modalIcon('heroicon-o-arrow-down')
-            ->form([
+            ->schema([
                 Select::make('size')
                     ->options(PaperSize::class)
                     ->default(PaperSize::FOLIO)

@@ -5,11 +5,18 @@ namespace App\Filament\Superuser\Resources\OfficeResource\RelationManagers;
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Deployment;
 use App\Models\Employee;
-use Filament\Forms;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Form;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,11 +28,11 @@ class EmployeesRelationManager extends RelationManager
 
     protected static ?string $title = 'Employee deployment';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('employee_id')
+        return $schema
+            ->components([
+                Select::make('employee_id')
                     ->relationship('employee', 'name')
                     ->searchable()
                     ->preload()
@@ -38,7 +45,7 @@ class EmployeesRelationManager extends RelationManager
                             ->where('office_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\Select::make('supervisor_id')
+                Select::make('supervisor_id')
                     ->relationship('supervisor', 'name', function ($query, $record) {
                         $query->whereHas('offices', function ($query) {
                             $query->where('offices.id', $this->ownerRecord->id)
@@ -54,13 +61,13 @@ class EmployeesRelationManager extends RelationManager
                             ->where('employee_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
                     ->required()
                     ->default(true),
-                Forms\Components\ToggleButtons::make('current')
+                ToggleButtons::make('current')
                     ->hiddenOn('edit')
                     ->boolean()
                     ->inline()
@@ -75,14 +82,14 @@ class EmployeesRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with('employee')->whereHas('employee', fn ($q) => $q->whereActive(1)))
             ->columns([
-                Tables\Columns\TextColumn::make('employee.full_name')
+                TextColumn::make('employee.full_name')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('supervisor.name')
+                TextColumn::make('supervisor.name')
                     ->formatStateUsing(fn ($record) => $record->supervisor?->titled_name)
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->toggleable()
                     ->getStateUsing(function (Deployment $record): string {
                         return str($record->employee->status?->value)
@@ -91,11 +98,11 @@ class EmployeesRelationManager extends RelationManager
                                 return $status->append(" ({$record->employee->substatus->value})")->replace('_', '-')->title();
                             });
                     }),
-                Tables\Columns\TextColumn::make('current')
+                TextColumn::make('current')
                     ->getStateUsing(fn ($record) => $record->current ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->current ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -104,12 +111,12 @@ class EmployeesRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('Current')
+            ->recordActions([
+                Action::make('Current')
                     ->disabled(fn ($record) => $record->current)
                     ->requiresConfirmation()
                     ->icon('heroicon-o-check-badge')
@@ -120,24 +127,24 @@ class EmployeesRelationManager extends RelationManager
 
                         $record->update(['current' => true]);
                     }),
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('Edit records')
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('Edit records')
                         ->groupedIcon('heroicon-m-pencil-square')
                         ->requiresConfirmation()
                         ->modalDescription('Leave blank to leave unchanged.')
                         ->modalIcon('heroicon-m-pencil-square')
-                        ->form(fn (Collection $records) => [
-                            Forms\Components\Select::make('current')
+                        ->schema(fn (Collection $records) => [
+                            Select::make('current')
                                 ->boolean(),
-                            Forms\Components\Select::make('supervisor_id')
+                            Select::make('supervisor_id')
                                 ->relationship('supervisor', 'name', function ($query) {
                                     $query->whereNot('id', $this->ownerRecord->head?->id);
 
@@ -181,7 +188,7 @@ class EmployeesRelationManager extends RelationManager
                                 }
                             }
                         }),
-                    Tables\Actions\DeleteBulkAction::make()
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation'),
                 ]),

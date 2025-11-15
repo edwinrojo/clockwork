@@ -3,7 +3,9 @@
 namespace App\Filament\Superuser\Resources\ScheduleResource\Pages;
 
 use App\Filament\Superuser\Resources\ScheduleResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
@@ -27,18 +29,18 @@ class EditSchedule extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make()
-                ->form([
+            DeleteAction::make()
+                ->schema([
                     TextInput::make('password')
-                        ->visible(Filament::getCurrentPanel()->getId() !== 'superuser')
+                        ->visible(Filament::getCurrentOrDefaultPanel()->getId() !== 'superuser')
                         ->label('Password')
                         ->placeholder('Enter your password to confirm')
                         ->currentPassword()
                         ->rule('required')
                         ->markAsRequired(),
                 ]),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            ForceDeleteAction::make(),
+            RestoreAction::make(),
         ];
     }
 

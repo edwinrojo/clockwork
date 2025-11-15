@@ -3,7 +3,9 @@
 namespace App\Filament\Superuser\Resources\GroupResource\Pages;
 
 use App\Filament\Superuser\Resources\GroupResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditGroup extends EditRecord
@@ -13,9 +15,9 @@ class EditGroup extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            DeleteAction::make(),
+            ForceDeleteAction::make(),
+            RestoreAction::make(),
         ];
     }
 }

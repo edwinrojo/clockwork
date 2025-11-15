@@ -14,7 +14,7 @@ class TimelogPolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser' => $user?->hasPermission(UserPermission::TIMELOG) ?? false,
             'secretary' => true,
             default => false,

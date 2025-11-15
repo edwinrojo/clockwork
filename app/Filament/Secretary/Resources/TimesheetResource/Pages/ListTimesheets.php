@@ -6,14 +6,14 @@ use App\Filament\Actions\ExportAttendanceAction;
 use App\Filament\Secretary\Resources\TimesheetResource;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
 use Filament\Pages\Dashboard\Actions\FilterAction;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,7 +41,7 @@ class ListTimesheets extends ListRecords
 
                     return str($html)->toHtmlString();
                 })
-                ->form([
+                ->schema([
                     TextInput::make('month')
                         ->live()
                         ->default(today()->day > 15 ? today()->startOfMonth()->format('Y-m') : today()->subMonth()->format('Y-m'))

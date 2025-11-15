@@ -6,6 +6,7 @@ use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use LSNepomuceno\LaravelA1PdfSign\Exceptions\ProcessRunTimeException;
 use LSNepomuceno\LaravelA1PdfSign\Sign\ManageCert;
+use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 class SignPdfRequest extends FormRequest
@@ -32,7 +33,7 @@ class SignPdfRequest extends FormRequest
 
                     try {
                         Yaml::parse($value);
-                    } catch (\Symfony\Component\Yaml\Exception\ParseException) {
+                    } catch (ParseException) {
                         return $fail("The $attribute field invalid must be a valid YAML string.");
                     }
                 },
@@ -73,7 +74,7 @@ class SignPdfRequest extends FormRequest
 
                     try {
                         Yaml::parse($value);
-                    } catch (\Symfony\Component\Yaml\Exception\ParseException) {
+                    } catch (ParseException) {
                         return $fail("The $attribute field invalid must be a valid YAML string.");
                     }
                 },

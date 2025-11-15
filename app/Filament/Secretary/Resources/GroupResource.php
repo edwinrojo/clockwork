@@ -2,13 +2,22 @@
 
 namespace App\Filament\Secretary\Resources;
 
-use App\Filament\Secretary\Resources\GroupResource\Pages;
+use App\Filament\Secretary\Resources\GroupResource\Pages\CreateGroup;
+use App\Filament\Secretary\Resources\GroupResource\Pages\EditGroup;
+use App\Filament\Secretary\Resources\GroupResource\Pages\ListGroups;
 use App\Filament\Superuser\Resources\GroupResource\RelationManagers\EmployeesRelationManager;
 use App\Models\Group;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -17,16 +26,16 @@ class GroupResource extends Resource
 {
     protected static ?string $model = Group::class;
 
-    protected static ?string $navigationIcon = 'gmdi-diversity-2-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-diversity-2-o';
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
-            Forms\Components\Section::make('Group name')
+        return $schema->schema([
+            Section::make('Group name')
                 ->schema([
-                    Forms\Components\TextInput::make('name')
+                    TextInput::make('name')
                         ->hiddenLabel()
                         ->alphaDash()
                         ->required()
@@ -41,10 +50,10 @@ class GroupResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('employees_count')
+                TextColumn::make('employees_count')
                     ->label('Employees')
                     ->counts(['employees' => function ($query) {
                         $query->where('member.active', true);
@@ -60,31 +69,31 @@ class GroupResource extends Resource
                         });
                     }])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make()
+                TrashedFilter::make()
                     ->native(false),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->deferLoading()
@@ -101,9 +110,9 @@ class GroupResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGroups::route('/'),
-            'create' => Pages\CreateGroup::route('/create'),
-            'edit' => Pages\EditGroup::route('/{record}/edit'),
+            'index' => ListGroups::route('/'),
+            'create' => CreateGroup::route('/create'),
+            'edit' => EditGroup::route('/{record}/edit'),
         ];
     }
 

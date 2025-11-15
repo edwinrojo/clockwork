@@ -3,7 +3,8 @@
 namespace App\Filament\Secretary\Resources\EmployeeResource\Pages;
 
 use App\Filament\Secretary\Resources\EmployeeResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditEmployee extends EditRecord
@@ -23,8 +24,8 @@ class EditEmployee extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
-            Actions\RestoreAction::make(),
+            DeleteAction::make(),
+            RestoreAction::make(),
         ];
     }
 }

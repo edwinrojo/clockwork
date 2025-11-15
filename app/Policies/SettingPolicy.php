@@ -14,7 +14,7 @@ class SettingPolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser' => $user?->hasPermission(UserPermission::SETTING) ?? false,
             'secretary' => true,
             default => false,

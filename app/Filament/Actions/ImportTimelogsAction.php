@@ -4,14 +4,15 @@ namespace App\Filament\Actions;
 
 use App\Jobs\ImportTimelogs;
 use App\Models\Scanner;
+use Closure;
 use DateTime;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\LazyCollection;
 use League\Csv\Reader;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -65,7 +66,7 @@ class ImportTimelogsAction extends Action
                 ->send();
         });
 
-        $this->form([
+        $this->schema([
             Radio::make('process')
                 ->hidden()
                 ->label('Process')
@@ -106,7 +107,7 @@ class ImportTimelogsAction extends Action
                 ->maxSize(8096)
                 ->required()
                 ->rules([
-                    fn () => function (string $attribute, TemporaryUploadedFile $value, \Closure $fail) {
+                    fn () => function (string $attribute, TemporaryUploadedFile $value, Closure $fail) {
                         $file = $value->getCLientOriginalName();
 
                         if (mime_content_type($value->getRealPath()) !== 'text/plain') {

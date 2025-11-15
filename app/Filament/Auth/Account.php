@@ -2,18 +2,19 @@
 
 namespace App\Filament\Auth;
 
+use App\Filament\Auth\Concerns\SocialOauthProviderLinker;
 use App\Traits\CanSendEmailVerification;
+use Filament\Auth\Pages\EditProfile;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
-use Filament\Pages\Auth\EditProfile;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Model;
 
 class Account extends EditProfile
 {
     use CanSendEmailVerification;
-    use Concerns\SocialOauthProviderLinker;
+    use SocialOauthProviderLinker;
 
     protected function getForms(): array
     {
@@ -72,7 +73,7 @@ class Account extends EditProfile
     protected function getRedirectUrl(): ?string
     {
         if ($this->getUser()->wasChanged('email')) {
-            return route('filament.'.Filament::getCurrentPanel()->getId().'.auth.email-verification.prompt');
+            return route('filament.'.Filament::getCurrentOrDefaultPanel()->getId().'.auth.email-verification.prompt');
         }
 
         return null;

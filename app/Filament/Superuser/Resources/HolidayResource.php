@@ -3,12 +3,22 @@
 namespace App\Filament\Superuser\Resources;
 
 use App\Enums\HolidayType;
-use App\Filament\Superuser\Resources\HolidayResource\Pages;
+use App\Filament\Superuser\Resources\HolidayResource\Pages\ListSuspensions;
 use App\Models\Holiday;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -17,44 +27,44 @@ class HolidayResource extends Resource
 {
     protected static ?string $model = Holiday::class;
 
-    protected static ?string $navigationIcon = 'gmdi-free-cancellation-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-free-cancellation-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('type')
+                Select::make('type')
                     ->live()
                     ->columnSpanFull()
                     ->rule('required')
                     ->markAsRequired()
                     ->options(HolidayType::class)
                     ->default(HolidayType::REGULAR_HOLIDAY),
-                Forms\Components\DatePicker::make('date')
+                DatePicker::make('date')
                     ->live()
                     ->columnSpanFull()
                     ->markAsRequired()
                     ->rule('required'),
-                Forms\Components\TimePicker::make('from')
+                TimePicker::make('from')
                     ->columnSpanFull()
                     ->seconds(false)
-                    ->visible(fn (Forms\Get $get) => $get('type') === HolidayType::WORK_SUSPENSION || $get('type') === HolidayType::WORK_SUSPENSION->value),
-                Forms\Components\TextInput::make('name')
+                    ->visible(fn (Get $get) => $get('type') === HolidayType::WORK_SUSPENSION || $get('type') === HolidayType::WORK_SUSPENSION->value),
+                TextInput::make('name')
                     ->columnSpanFull()
                     ->rule('required')
                     ->markAsRequired()
                     ->maxLength(255),
-                Forms\Components\Textarea::make('remarks')
+                Textarea::make('remarks')
                     ->columnSpanFull()
                     ->maxLength(255)
                     ->rows(5),
-                Forms\Components\TextInput::make('password')
+                TextInput::make('password')
                     ->columnSpanFull()
                     ->password()
                     ->currentPassword()
                     ->rule('required')
                     ->markAsRequired()
-                    ->visible(function (?Holiday $record, Forms\Get $get) {
+                    ->visible(function (?Holiday $record, Get $get) {
                         if ($record?->date->lt(now())) {
                             return true;
                         }
@@ -65,7 +75,7 @@ class HolidayResource extends Resource
 
                         return Carbon::parse($get('date'))->lt(now());
                     }),
-                Forms\Components\Hidden::make('created_by')
+                Hidden::make('created_by')
                     ->default(Auth::id()),
             ]);
     }
@@ -74,21 +84,21 @@ class HolidayResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('date')
+                TextColumn::make('date')
                     ->formatStateUsing(fn (?string $state) => Carbon::parse($state)->format('jS F Y'))
                     ->sortable(),
-                Tables\Columns\TextColumn::make('type'),
-                Tables\Columns\TextColumn::make('createdBy.name')
+                TextColumn::make('type'),
+                TextColumn::make('createdBy.name')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->since()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -96,13 +106,13 @@ class HolidayResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->slideOver()
                     ->requiresConfirmation()
                     ->modalDescription('Modifying past holidays or suspensions (from or to) will require you to enter your password as this may have an irreversible side-effect.')
                     ->modalWidth('xl'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->modalDescription(function (?Holiday $record) {
                         $needsPassword = now()->isAfter($record->date);
 
@@ -111,17 +121,17 @@ class HolidayResource extends Resource
                         return str(($needsPassword ? $confirmation : '').'Are you sure you would like to do this?')
                             ->toHtmlString();
                     })
-                    ->form([
-                        Forms\Components\TextInput::make('password')
+                    ->schema([
+                        TextInput::make('password')
                             ->password()
                             ->currentPassword()
                             ->rules(['required'])
                             ->visible(fn (Holiday $record) => $record->recurring || now()->isAfter($record->date)),
                     ]),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->deferLoading()
@@ -139,7 +149,7 @@ class HolidayResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSuspensions::route('/'),
+            'index' => ListSuspensions::route('/'),
         ];
     }
 }

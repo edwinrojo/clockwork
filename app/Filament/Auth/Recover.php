@@ -3,12 +3,12 @@
 namespace App\Filament\Auth;
 
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use Filament\Auth\Http\Responses\Contracts\PasswordResetResponse;
+use Filament\Auth\Pages\PasswordReset\ResetPassword;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Http\Responses\Auth\Contracts\PasswordResetResponse;
 use Filament\Notifications\Notification;
-use Filament\Pages\Auth\PasswordReset\ResetPassword;
+use Filament\Schemas\Schema;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
@@ -28,7 +28,7 @@ class Recover extends ResetPassword
 
     protected static string $layout = 'filament-panels::components.layout.base';
 
-    protected static string $view = 'filament.auth.recover';
+    protected string $view = 'filament.auth.recover';
 
     public function mount(?string $email = null, ?string $token = null): void
     {
@@ -49,9 +49,9 @@ class Recover extends ResetPassword
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
             ->schema([
                 TextInput::make('type')

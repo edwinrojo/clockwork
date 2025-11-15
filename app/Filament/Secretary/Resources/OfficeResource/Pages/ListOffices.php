@@ -3,7 +3,7 @@
 namespace App\Filament\Secretary\Resources\OfficeResource\Pages;
 
 use App\Filament\Secretary\Resources\OfficeResource;
-use Filament\Actions;
+use Filament\Actions\ActionGroup;
 use Filament\Resources\Pages\ListRecords;
 
 class ListOffices extends ListRecords
@@ -13,7 +13,7 @@ class ListOffices extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ActionGroup::make([
+            ActionGroup::make([
             ]),
         ];
     }

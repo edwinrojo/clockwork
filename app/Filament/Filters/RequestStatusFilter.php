@@ -33,7 +33,7 @@ class RequestStatusFilter extends BaseFilter
 
         $this->relationship('request', 'status');
 
-        $this->form([
+        $this->schema([
             Select::make('status')
                 ->options(RequestStatus::class)
                 ->multiple()

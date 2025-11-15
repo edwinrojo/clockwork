@@ -6,9 +6,8 @@
     <x-filament-panels::form id="form" wire:submit="resetPassword">
         {{ $this->form }}
 
-        <x-filament-panels::form.actions
-            :actions="$this->getCachedFormActions()"
-            :full-width="$this->hasFullWidthFormActions()"
+        <x-filament::actions
+            :actions="$this->getFormActions()"
         />
     </x-filament-panels::form>
 

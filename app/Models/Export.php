@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 
 class Export extends Model
@@ -73,11 +74,13 @@ class Export extends Model
                 if (is_resource($content)) {
                     $rawContent = stream_get_contents($content);
                     $decoded = base64_decode($rawContent, true);
+
                     return $decoded !== false ? $decoded : $rawContent;
                 }
 
                 if (is_string($content)) {
                     $decoded = base64_decode($content, true);
+
                     return $decoded !== false ? $decoded : $content;
                 }
 
@@ -102,7 +105,7 @@ class Export extends Model
         return Attribute::make(
             function (): ?string {
                 if ($this->disk !== null && in_array($this->disk, ['public', 'local', 'azure'])) {
-                    /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+                    /** @var FilesystemAdapter $disk */
                     $disk = Storage::disk($this->disk);
 
                     return $disk->mimetype($this->filename);

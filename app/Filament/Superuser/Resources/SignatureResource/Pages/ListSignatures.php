@@ -3,7 +3,7 @@
 namespace App\Filament\Superuser\Resources\SignatureResource\Pages;
 
 use App\Filament\Superuser\Resources\SignatureResource;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListSignatures extends ListRecords
@@ -13,7 +13,7 @@ class ListSignatures extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

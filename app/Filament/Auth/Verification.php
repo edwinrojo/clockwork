@@ -8,9 +8,9 @@ use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Exception;
 use Filament\Actions\Action;
+use Filament\Auth\Notifications\VerifyEmail;
 use Filament\Facades\Filament;
-use Filament\Forms\Form;
-use Filament\Notifications\Auth\VerifyEmail;
+use Filament\Facades\Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Pages\SimplePage;
 use Filament\Panel;
@@ -18,7 +18,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
- * @property Form $form
+ * @property Schema $form
  */
 class Verification extends SimplePage
 {
@@ -27,7 +27,7 @@ class Verification extends SimplePage
     /**
      * @var view-string
      */
-    protected static string $view = 'filament-panels::pages.auth.email-verification.email-verification-prompt';
+    protected string $view = 'filament-panels::pages.auth.email-verification.email-verification-prompt';
 
     public function mount(): void
     {
@@ -60,7 +60,7 @@ class Verification extends SimplePage
     protected function getPanel()
     {
         /** @var Panel */
-        $panel = Filament::getCurrentPanel();
+        $panel = Filament::getCurrentOrDefaultPanel();
 
         return $panel;
     }

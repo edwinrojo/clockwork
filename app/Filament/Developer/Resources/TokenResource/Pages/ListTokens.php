@@ -20,7 +20,7 @@ class ListTokens extends ListRecords
             Action::make('New Token')
                 ->requiresConfirmation()
                 ->modalDescription('Thise token will only be valid for the current year.')
-                ->form([
+                ->schema([
                     TextInput::make('name')
                         ->default(today()->year)
                         ->label('Year')
@@ -51,13 +51,13 @@ class ListTokens extends ListRecords
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Close')
                 ->closeModalByClickingAway(false)
-                ->form(fn ($arguments) => [
+                ->schema(fn ($arguments) => [
                     TextInput::make('token')
                         ->default($arguments['token'])
                         ->readOnly()
                         ->dehydrated(false)
                         ->suffixAction(
-                            \Filament\Forms\Components\Actions\Action::make('copy')
+                            Action::make('copy')
                                 ->icon('heroicon-s-clipboard-document-check')
                                 ->action(fn ($livewire, $state) => $livewire->js('window.navigator.clipboard.writeText("'.$state.'");')),
                         ),

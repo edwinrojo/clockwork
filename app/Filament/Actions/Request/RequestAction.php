@@ -64,7 +64,7 @@ class RequestAction extends Action
             return "Request has been forwarded to the {$alias}. Please wait patiently for their response.";
         });
 
-        $this->form([
+        $this->schema([
             TextInput::make('title')
                 ->markAsRequired()
                 ->default($this->record->title)

@@ -3,7 +3,7 @@
 namespace App\Filament\Actions\TableActions;
 
 use App\Models\Timesheet;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Illuminate\Support\Carbon;
 use ZipArchive;
 

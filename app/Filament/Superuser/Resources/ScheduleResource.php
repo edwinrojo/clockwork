@@ -4,15 +4,35 @@ namespace App\Filament\Superuser\Resources;
 
 use App\Enums\RequestStatus;
 use App\Enums\WorkArrangement;
-use App\Filament\Superuser\Resources\ScheduleResource\Pages;
+use App\Filament\Superuser\Resources\ScheduleResource\Pages\CreateSchedule;
+use App\Filament\Superuser\Resources\ScheduleResource\Pages\EditSchedule;
+use App\Filament\Superuser\Resources\ScheduleResource\Pages\ListSchedules;
 use App\Filament\Superuser\Resources\ScheduleResource\RelationManagers\EmployeesRelationManager;
 use App\Models\Schedule;
+use Closure;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Facades\Filament;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -24,37 +44,37 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = Schedule::class;
 
-    protected static ?string $navigationIcon = 'gmdi-punch-clock-o';
+    protected static string|\BackedEnum|null $navigationIcon = 'gmdi-punch-clock-o';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Schedule Period')
+                Section::make('Schedule Period')
                     ->columns(3)
                     ->schema([
-                        Forms\Components\Group::make()
+                        Group::make()
                             ->columnSpan(2)
                             ->columns(2)
                             ->schema([
-                                Forms\Components\ToggleButtons::make('global')
-                                    ->visible(Filament::getCurrentPanel()->getId() === 'superuser')
+                                ToggleButtons::make('global')
+                                    ->visible(Filament::getCurrentOrDefaultPanel()->getId() === 'superuser')
                                     ->hintIcon('heroicon-m-question-mark-circle')
                                     ->hintIconTooltip('Global schedules will be applied to all employees without specific schedules.')
                                     ->required()
                                     ->boolean()
                                     ->inline()
                                     ->grouped()
-                                    ->default(Filament::getCurrentPanel()->getId() === 'superuser')
+                                    ->default(Filament::getCurrentOrDefaultPanel()->getId() === 'superuser')
                                     ->live()
-                                    ->afterStateUpdated(function (Forms\Set $set, string $state) {
+                                    ->afterStateUpdated(function (Set $set, string $state) {
                                         if ($state) {
                                             $set('arrangement', WorkArrangement::STANDARD_WORK_HOUR->value);
 
                                             $set('office_id', null);
                                         }
                                     }),
-                                Forms\Components\ToggleButtons::make('days')
+                                ToggleButtons::make('days')
                                     ->label('Days')
                                     ->options([
                                         'everyday' => 'Everyday',
@@ -67,7 +87,7 @@ class ScheduleResource extends Resource
                                     ->dehydratedWhenHidden()
                                     ->columns(3)
                                     ->rules([
-                                        fn (Forms\Get $get) => function ($attribute, $value, $fail) use ($get) {
+                                        fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
                                             if (empty($get('start')) || empty($get('end'))) {
                                                 return;
                                             }
@@ -84,9 +104,9 @@ class ScheduleResource extends Resource
                                         },
                                     ]),
                             ]),
-                        Forms\Components\Select::make('office_id')
+                        Select::make('office_id')
                             ->relationship('office', 'name', function ($query) {
-                                if (Filament::getCurrentPanel()->getId() === 'superuser') {
+                                if (Filament::getCurrentOrDefaultPanel()->getId() === 'superuser') {
                                     return $query;
                                 }
 
@@ -94,19 +114,19 @@ class ScheduleResource extends Resource
                             })
                             ->searchable()
                             ->preload()
-                            ->hidden(fn (Forms\Get $get) => $get('global')) // || $get('arrangement') == WorkArrangement::UNSET->value)
-                            ->required(fn (Forms\Get $get) => ! $get('global'))
+                            ->hidden(fn (Get $get) => $get('global')) // || $get('arrangement') == WorkArrangement::UNSET->value)
+                            ->required(fn (Get $get) => ! $get('global'))
                             ->columnSpan(2)
                             ->dehydratedWhenHidden(),
-                        Forms\Components\Group::make()
+                        Group::make()
                             ->columnSpan(2)
                             ->columns(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('start')
+                                DatePicker::make('start')
                                     ->markAsRequired()
                                     ->rules([
                                         'required',
-                                        fn (Forms\Get $get) => function (string $attribute, string $value, \Closure $fail) use ($get) {
+                                        fn (Get $get) => function (string $attribute, string $value, Closure $fail) use ($get) {
                                             if (empty($get('office_id')) || empty($get('end'))) {
                                                 return;
                                             }
@@ -116,12 +136,12 @@ class ScheduleResource extends Resource
                                             }
                                         },
                                     ]),
-                                Forms\Components\DatePicker::make('end')
+                                DatePicker::make('end')
                                     ->after('start')
                                     ->markAsRequired()
                                     ->rules([
                                         'required',
-                                        fn (Forms\Get $get) => function (string $attribute, string $value, \Closure $fail) use ($get) {
+                                        fn (Get $get) => function (string $attribute, string $value, Closure $fail) use ($get) {
                                             if (empty($get('office_id')) || empty($get('start'))) {
                                                 return;
                                             }
@@ -132,11 +152,11 @@ class ScheduleResource extends Resource
                                         },
                                     ]),
                             ]),
-                        Forms\Components\Radio::make('arrangement')
+                        Radio::make('arrangement')
                             ->label('Arrangement')
                             ->options(WorkArrangement::class)
                             ->validationMessages(['not_in' => 'This feature is not yet supported or deprecated and might be removed in the future.'])
-                            ->disableOptionWhen(function (string $value, Forms\Get $get) {
+                            ->disableOptionWhen(function (string $value, Get $get) {
                                 return match ($value) {
                                     // WorkArrangement::UNSET->value,
                                     WorkArrangement::WORK_SHIFTING->value,
@@ -153,21 +173,21 @@ class ScheduleResource extends Resource
                             ->dehydrated(fn (?string $state) => isset($state))
                             ->rules([
                                 'required',
-                                fn (Forms\Get $get) => function (string $attribute, string $value, \Closure $fail) use ($get) {
+                                fn (Get $get) => function (string $attribute, string $value, Closure $fail) use ($get) {
                                     if ($get('global') && ! in_array($value, [WorkArrangement::STANDARD_WORK_HOUR->value/**WorkArrangement::FLEXI_TIME->value*/])) {
                                         $fail('Global schedules can only have standard work hours.');
                                     }
                                 },
                             ]),
                     ]),
-                Forms\Components\Section::make('Timetable')
+                Section::make('Timetable')
                     // ->hidden(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::UNSET->value)
                     ->columnSpan(1)
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Fieldset::make('Entirety')
+                        Fieldset::make('Entirety')
                             ->schema([
-                                Forms\Components\TextInput::make('timetable.duration')
+                                TextInput::make('timetable.duration')
                                     ->label('Duration')
                                     ->hint('hrs')
                                     ->hintIcon('heroicon-m-question-mark-circle')
@@ -175,9 +195,9 @@ class ScheduleResource extends Resource
                                     ->default(8)
                                     ->markAsRequired()
                                     ->rules(['numeric', 'required', 'min:6', 'max:12']),
-                                Forms\Components\TextInput::make('timetable.break')
+                                TextInput::make('timetable.break')
                                     ->reactive()
-                                    ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                    ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                     ->label('Break')
                                     ->hint('mins')
                                     ->hintIcon('heroicon-m-question-mark-circle')
@@ -186,19 +206,19 @@ class ScheduleResource extends Resource
                                     ->markAsRequired()
                                     ->rules(['numeric', 'required', 'min:0', 'max:180']),
                             ]),
-                        Forms\Components\Group::make()
+                        Group::make()
                             ->columnSpan(2)
                             ->columns(2)
-                            ->visible(function (Forms\Get $get) {
+                            ->visible(function (Get $get) {
                                 return in_array($get('arrangement'), [
                                     WorkArrangement::STANDARD_WORK_HOUR->value,
                                     // WorkArrangement::FLEXI_TIME->value,
                                 ]);
                             })
                             ->schema([
-                                Forms\Components\Fieldset::make('AM')
+                                Fieldset::make('AM')
                                     ->schema([
-                                        Forms\Components\TimePicker::make('timetable.p1')
+                                        TimePicker::make('timetable.p1')
                                             ->rules(['required'])
                                             ->markAsRequired()
                                             ->seconds(false)
@@ -207,10 +227,10 @@ class ScheduleResource extends Resource
                                             ->hint('in')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Employees must "clock in" before the specified time. Otherwise, the attendance record will be disregarded.')
-                                            ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                            ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                             ->rules([
                                                 'date_format:H:i',
-                                                fn (Forms\Get $get) => function ($attribute, $value, $fail) use ($get) {
+                                                fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
                                                     if ($get('timetable.break') > 0 && (empty($get('timetable.p2')) || empty($get('timetable.p3')))) {
                                                         return;
                                                     }
@@ -242,7 +262,7 @@ class ScheduleResource extends Resource
                                                     }
                                                 },
                                             ]),
-                                        Forms\Components\TimePicker::make('timetable.p2')
+                                        TimePicker::make('timetable.p2')
                                             ->rule(fn (Get $get) => $get('timetable.break') > 0 ? 'required' : null)
                                             ->markAsRequired(fn (Get $get) => $get('timetable.break') > 0 ? 'required' : null)
                                             ->disabled(fn (Get $get) => (int) $get('timetable.break') === 0)
@@ -253,10 +273,10 @@ class ScheduleResource extends Resource
                                             ->hint('out')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Employees must "clock out" within the specified time. Otherwise, the attendance record will be disregarded.')
-                                            ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                            ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                             ->rules([
                                                 'date_format:H:i',
-                                                fn (Forms\Get $get) => function ($attribute, $value, $fail) use ($get) {
+                                                fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
                                                     if ($get('timetable.break') > 0 && (empty($get('timetable.p2')) || empty($get('timetable.p3')))) {
                                                         return;
                                                     }
@@ -283,9 +303,9 @@ class ScheduleResource extends Resource
                                                 },
                                             ]),
                                     ]),
-                                Forms\Components\Fieldset::make('PM')
+                                Fieldset::make('PM')
                                     ->schema([
-                                        Forms\Components\TimePicker::make('timetable.p3')
+                                        TimePicker::make('timetable.p3')
                                             ->rule(fn (Get $get) => $get('timetable.break') > 0 ? 'required' : null)
                                             ->markAsRequired(fn (Get $get) => $get('timetable.break') > 0 ? 'required' : null)
                                             ->disabled(fn (Get $get) => (int) $get('timetable.break') === 0)
@@ -296,10 +316,10 @@ class ScheduleResource extends Resource
                                             ->hint('in')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Employees must "clock in" within the specified time. Otherwise, the attendance record will be disregarded.')
-                                            ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                            ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                             ->rules([
                                                 'date_format:H:i',
-                                                fn (Forms\Get $get) => function ($attribute, $value, $fail) use ($get) {
+                                                fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
                                                     if ($get('timetable.break') > 0 && (empty($get('timetable.p2')) || empty($get('timetable.p3')))) {
                                                         return;
                                                     }
@@ -329,7 +349,7 @@ class ScheduleResource extends Resource
                                                     }
                                                 },
                                             ]),
-                                        Forms\Components\TimePicker::make('timetable.p4')
+                                        TimePicker::make('timetable.p4')
                                             ->rules(['required'])
                                             ->markAsRequired()
                                             ->seconds(false)
@@ -338,10 +358,10 @@ class ScheduleResource extends Resource
                                             ->hint('out')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Employees must "clock out" within the specified time. Otherwise, the attendance record will be disregarded.')
-                                            ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                            ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                             ->rules([
                                                 'date_format:H:i',
-                                                fn (Forms\Get $get) => function ($attribute, $value, $fail) use ($get) {
+                                                fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
                                                     if ($get('timetable.break') > 0 && (empty($get('timetable.p2')) || empty($get('timetable.p3')))) {
                                                         return;
                                                     }
@@ -389,67 +409,67 @@ class ScheduleResource extends Resource
                                     ]),
                             ]),
                     ]),
-                Forms\Components\Section::make('Threshold')
+                Section::make('Threshold')
                     // ->hidden(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::UNSET->value)
-                    ->disabled(Filament::getCurrentPanel()->getId() !== 'superuser')
-                    ->dehydrated(Filament::getCurrentPanel()->getId() !== 'superuser')
+                    ->disabled(Filament::getCurrentOrDefaultPanel()->getId() !== 'superuser')
+                    ->dehydrated(Filament::getCurrentOrDefaultPanel()->getId() !== 'superuser')
                     ->columnSpan(1)
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Group::make()
+                        Group::make()
                             ->columnSpan(2)
                             ->columns(2)
                             ->schema([
-                                Forms\Components\Fieldset::make('Punch 1')
+                                Fieldset::make('Punch 1')
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.p1.min')
+                                        TextInput::make('threshold.p1.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Disregard attendance records that are "before" the specified number of minutes from Punch 1.')
-                                            ->default(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 280 : 120)
+                                            ->default(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 280 : 120)
                                             ->numeric()
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
-                                        Forms\Components\TextInput::make('threshold.p1.max')
+                                        TextInput::make('threshold.p1.max')
                                             ->label('Max')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Disregard attendance records that are "after" the specified number of minutes from Punch 1.')
-                                            ->default(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 180 : 360)
+                                            ->default(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 180 : 360)
                                             ->numeric()
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
                                     ]),
-                                Forms\Components\Fieldset::make('Punch 2')
+                                Fieldset::make('Punch 2')
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.p2.min')
+                                        TextInput::make('threshold.p2.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Disregard attendance records that are "before" the specified number of minutes from Punch 2.')
-                                            ->default(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 180 : 360)
+                                            ->default(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 180 : 360)
                                             ->numeric()
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
-                                        Forms\Components\TextInput::make('threshold.p2.max')
+                                        TextInput::make('threshold.p2.max')
                                             ->label('Max')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
                                             ->hintIconTooltip('Disregard attendance records that are "after" the specified number of minutes from Punch 2.')
-                                            ->default(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 120 : 420)
+                                            ->default(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value ? 120 : 420)
                                             ->numeric()
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
                                     ]),
-                                Forms\Components\Fieldset::make('Punch 3')
-                                    ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                Fieldset::make('Punch 3')
+                                    ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.p3.min')
+                                        TextInput::make('threshold.p3.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -459,7 +479,7 @@ class ScheduleResource extends Resource
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
-                                        Forms\Components\TextInput::make('threshold.p3.max')
+                                        TextInput::make('threshold.p3.max')
                                             ->label('Max')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -470,10 +490,10 @@ class ScheduleResource extends Resource
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
                                     ]),
-                                Forms\Components\Fieldset::make('Punch 4')
-                                    ->visible(fn (Forms\Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
+                                Fieldset::make('Punch 4')
+                                    ->visible(fn (Get $get) => $get('arrangement') == WorkArrangement::STANDARD_WORK_HOUR->value)
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.p4.min')
+                                        TextInput::make('threshold.p4.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -484,7 +504,7 @@ class ScheduleResource extends Resource
                                             ->type('text')
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
-                                        Forms\Components\TextInput::make('threshold.p4.max')
+                                        TextInput::make('threshold.p4.max')
                                             ->label('Max')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -495,10 +515,10 @@ class ScheduleResource extends Resource
                                             ->markAsRequired()
                                             ->rules(['required', 'min:0']),
                                     ]),
-                                Forms\Components\Fieldset::make('Overtime')
+                                Fieldset::make('Overtime')
                                     ->columns(2)
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.overtime.min')
+                                        TextInput::make('threshold.overtime.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -506,7 +526,7 @@ class ScheduleResource extends Resource
                                             ->default(120)
                                             ->numeric()
                                             ->type('text'),
-                                        Forms\Components\TextInput::make('threshold.overtime.max')
+                                        TextInput::make('threshold.overtime.max')
                                             ->label('Max')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -515,11 +535,11 @@ class ScheduleResource extends Resource
                                             ->numeric()
                                             ->type('text'),
                                     ]),
-                                Forms\Components\Fieldset::make('Tardy')
+                                Fieldset::make('Tardy')
                                     ->hidden()
                                     ->columns(2)
                                     ->schema([
-                                        Forms\Components\TextInput::make('threshold.tardy.min')
+                                        TextInput::make('threshold.tardy.min')
                                             ->label('Min')
                                             ->hint('mins')
                                             ->hintIcon('heroicon-m-question-mark-circle')
@@ -545,9 +565,9 @@ class ScheduleResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('period')
+                TextColumn::make('period')
                     ->extraCellAttributes(['class' => 'font-mono']),
-                Tables\Columns\TextColumn::make('days')
+                TextColumn::make('days')
                     ->label('Days')
                     ->formatStateUsing(function (Schedule $record): string {
                         return match ($record->days) {
@@ -557,28 +577,28 @@ class ScheduleResource extends Resource
                             'weekend' => 'Weekends',
                         };
                     }),
-                Tables\Columns\TextColumn::make('global')
+                TextColumn::make('global')
                     ->label('Office')
                     ->formatStateUsing(function (Schedule $record): HtmlString|string {
                         return $record->office ? $record->office->code : str('Global')->wrap('**')->wrap('(', ')')->inlineMarkdown()->toHtmlString();
                     }),
-                Tables\Columns\TextColumn::make('request.user.name')
+                TextColumn::make('request.user.name')
                     ->label('Requestor'),
-                Tables\Columns\TextColumn::make('deleted_at')
+                TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('approved')
+                TernaryFilter::make('approved')
                     ->trueLabel('Yes')
                     ->falseLabel('No')
                     ->queries(
@@ -586,16 +606,16 @@ class ScheduleResource extends Resource
                         fn ($q) => $q->whereHas('request', fn ($q) => $q->whereNot('status', RequestStatus::APPROVE)->where('for', 'approval'))
                             ->orWhereDoesntHave('request'),
                     ),
-                Tables\Filters\TrashedFilter::make(),
+                TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
                 ]),
             ])
             ->deferLoading()
@@ -612,9 +632,9 @@ class ScheduleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSchedules::route('/'),
-            'create' => Pages\CreateSchedule::route('/create'),
-            'edit' => Pages\EditSchedule::route('/{record}/edit'),
+            'index' => ListSchedules::route('/'),
+            'create' => CreateSchedule::route('/create'),
+            'edit' => EditSchedule::route('/{record}/edit'),
         ];
     }
 

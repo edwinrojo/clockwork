@@ -4,10 +4,16 @@ namespace App\Filament\Superuser\Resources\EmployeeResource\RelationManagers;
 
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Member;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Validation\Rule;
 
@@ -17,11 +23,11 @@ class GroupsRelationManager extends RelationManager
 
     protected static ?string $title = 'Group Setup';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('group_id')
+        return $schema
+            ->components([
+                Select::make('group_id')
                     ->relationship('group', 'name')
                     ->searchable()
                     ->preload()
@@ -34,7 +40,7 @@ class GroupsRelationManager extends RelationManager
                             ->where('employee_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
@@ -47,9 +53,9 @@ class GroupsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('group.name')
+                TextColumn::make('group.name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -58,22 +64,22 @@ class GroupsRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->createAnother(false)
                     ->slideOver()
                     ->modalWidth('xl'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl'),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation'),
                 ]),

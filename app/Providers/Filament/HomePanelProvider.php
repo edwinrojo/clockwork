@@ -58,7 +58,7 @@ class HomePanelProvider extends PanelProvider
                             default => User::class,
                         };
 
-                        /** @var \App\Models\User|\App\Models\Employee $user */
+                        /** @var User|Employee $user */
                         $user = $model::where('email', $oauthUser->getEmail())->first();
 
                         if ($user) {

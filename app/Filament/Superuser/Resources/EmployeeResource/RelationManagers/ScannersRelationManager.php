@@ -5,11 +5,19 @@ namespace App\Filament\Superuser\Resources\EmployeeResource\RelationManagers;
 use App\Filament\Filters\ActiveFilter;
 use App\Models\Enrollment;
 use App\Models\Scanner;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Validation\Rule;
 
@@ -19,13 +27,13 @@ class ScannersRelationManager extends RelationManager
 
     protected static ?string $title = 'Scanner Enrollment';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Select::make('scanner_id')
+        return $schema
+            ->components([
+                Select::make('scanner_id')
                     ->relationship('scanner', 'name', function ($query) {
-                        if (! in_array(Filament::getCurrentPanel()->getId(), ['superuser', 'manager'])) {
+                        if (! in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['superuser', 'manager'])) {
                             $query->whereIn('scanners.id', user()->scanners->pluck('id'));
                         }
 
@@ -44,18 +52,18 @@ class ScannersRelationManager extends RelationManager
                             ->where('employee_id', $this->ownerRecord->id)
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\TextInput::make('uid')
+                TextInput::make('uid')
                     ->markAsRequired()
                     ->label('UID')
                     ->rules('required')
                     ->maxLength(255)
                     ->validationAttribute('uid')
                     ->rules([
-                        fn (Forms\Get $get, ?Enrollment $record) => Rule::unique('enrollment', 'uid')
+                        fn (Get $get, ?Enrollment $record) => Rule::unique('enrollment', 'uid')
                             ->where('scanner_id', $record?->scanner_id ?? $get('scanner_id'))
                             ->ignore($record?->id, 'id'),
                     ]),
-                Forms\Components\ToggleButtons::make('active')
+                ToggleButtons::make('active')
                     ->boolean()
                     ->inline()
                     ->grouped()
@@ -69,16 +77,16 @@ class ScannersRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->whereHas('scanner', fn ($q) => $q->whereActive(1)))
             ->columns([
-                Tables\Columns\TextColumn::make('scanner.name')
+                TextColumn::make('scanner.name')
                     ->label('Name')
                     ->placeholder(fn ($record) => $record->id)
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('uid')
+                TextColumn::make('uid')
                     ->label('UID')
                     ->sortable(query: fn ($query, $direction) => $query->orderByRaw("CAST(uid as UNSIGNED) $direction"))
                     ->searchable(query: fn ($query, $search) => $query->where('uid', $search)),
-                Tables\Columns\TextColumn::make('active')
+                TextColumn::make('active')
                     ->getStateUsing(fn ($record) => $record->active ? 'Yes' : 'No')
                     ->icon(fn ($record) => $record->active ? 'heroicon-o-check' : 'heroicon-o-no-symbol')
                     ->toggleable(),
@@ -87,34 +95,34 @@ class ScannersRelationManager extends RelationManager
                 ActiveFilter::make(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->createAnother(false)
                     ->slideOver()
                     ->modalWidth('xl')
                     ->visible(fn () => user()->scanners->isNotEmpty()),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->slideOver()
                     ->modalWidth('xl')
                     ->visible(function (Enrollment $record) {
-                        return in_array(Filament::getCurrentPanel()->getId(), ['superuser', 'manager']) ?:
+                        return in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['superuser', 'manager']) ?:
                             user()->scanners->first(fn ($scanner) => $scanner->id === $record->scanner_id);
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->icon('heroicon-o-x-circle')
                     ->modalIcon('heroicon-o-shield-exclamation')
                     ->visible(function (Enrollment $record) {
-                        return in_array(Filament::getCurrentPanel()->getId(), ['superuser', 'manager']) ?:
+                        return in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['superuser', 'manager']) ?:
                             user()->scanners->first(fn ($scanner) => $scanner->id === $record->scanner_id);
                     }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->icon('heroicon-o-x-circle')
                         ->modalIcon('heroicon-o-shield-exclamation')
-                        ->visible(fn () => in_array(Filament::getCurrentPanel()->getId(), ['superuser'])),
+                        ->visible(fn () => in_array(Filament::getCurrentOrDefaultPanel()->getId(), ['superuser'])),
                 ]),
             ])
             ->defaultSort(function ($query) {

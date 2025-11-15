@@ -15,7 +15,7 @@ class RequestPolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser' => settings('requests') ?? false && $user?->hasPermission(UserPermission::REQUEST),
             'director', 'manager', 'secretary' => settings('requests') ?? false,
             default => false,

@@ -14,7 +14,7 @@ class SignaturePolicy
             return false;
         }
 
-        return match (Filament::getCurrentPanel()->getId()) {
+        return match (Filament::getCurrentOrDefaultPanel()->getId()) {
             'superuser' => $user?->hasPermission(UserPermission::SIGNATURE) ?? false,
             'secretary' => true,
             default => false,
