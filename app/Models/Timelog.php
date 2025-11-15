@@ -34,9 +34,9 @@ class Timelog extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope('excludeShadow', fn (Builder $builder) => $builder->where('shadow', false));
+        static::addGlobalScope('excludeShadow', fn (Builder $builder) => $builder->where('timelogs.shadow', false));
 
-        static::addGlobalScope('excludeMasked', fn (Builder $builder) => $builder->where('masked', false));
+        static::addGlobalScope('excludeMasked', fn (Builder $builder) => $builder->where('timelogs.masked', false));
 
         static::addGlobalScope('excludeRecasted', function (Builder $builder) {
             $builder->leftJoin('timelogs as recasted', function ($join) {
