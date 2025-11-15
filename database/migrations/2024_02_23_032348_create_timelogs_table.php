@@ -25,6 +25,10 @@ return new class extends Migration
             $table->ulid('timelog_id')->index()->nullable();
 
             $table->unique(['device', 'uid', 'time', 'state', 'mode']);
+            $table->index(['device', 'shadow', 'masked']);
+            $table->index(['shadow', 'masked']);
+            $table->index(['timelog_id', 'recast']);
+            $table->index(['device', 'time']);
         });
 
         Schema::table('timelogs', function (Blueprint $table) {

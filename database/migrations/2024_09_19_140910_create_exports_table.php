@@ -24,6 +24,10 @@ return new class extends Migration
             $table->nullableUlidMorphs('exportable');
             $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
+
+            $table->index('user_id');
+            $table->index(['exportable_id', 'exportable_type']);
+            $table->index('created_at');
         });
     }
 
