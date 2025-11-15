@@ -338,7 +338,7 @@ class TimesheetExporter implements Responsable
 
         $timesheets = $timesheets->map->setTemporary();
 
-        if ($this->transmittal > 0 && $this->grouping !== false) { //grouping only available to office
+        if ($this->transmittal > 0 && $this->grouping !== false) { // grouping only available to office
             $timesheets = $timesheets->groupBy(fn ($timesheet) => $timesheet->employee->offices->pluck('code')->toArray())->flatten();
         }
 

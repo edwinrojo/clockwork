@@ -49,4 +49,3 @@ class ProcessAffectedTimetables implements ShouldBeEncrypted, ShouldQueue
         }
     }
 }
-

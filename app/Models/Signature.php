@@ -13,7 +13,7 @@ use SensitiveParameter;
 
 class Signature extends Model
 {
-    use HasFactory, HasUlids; //SoftDeletes;
+    use HasFactory, HasUlids; // SoftDeletes;
 
     protected $fillable = [
         'specimen',

@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Drivers\FakeFilesystemAdapter;
 use App\Models\Token;
-use Exception;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Http\Responses\Contracts\LogoutResponse;
 use Filament\Forms\Components\Select;
@@ -13,9 +12,9 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\VerticalAlignment;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
-use Filament\View\PanelsRenderHook;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\App;
