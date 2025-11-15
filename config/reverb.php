@@ -53,8 +53,8 @@ return [
                     'database' => env('REDIS_DB', '0'),
                 ],
             ],
-            'pulse_ingest_interval' => null,
-            'telescope_ingest_interval' => null,
+            'pulse_ingest_interval' => 0,
+            'telescope_ingest_interval' => 0,
         ],
 
     ],
