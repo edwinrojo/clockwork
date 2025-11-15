@@ -51,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Select::configureUsing(fn (Select $select) => $select->native(false));
 
-        Table::configureUsing(fn (Table $table) => $table->paginated([10, 25, 50, 100])->defaultPaginationPageOption(25)->striped());
+        Table::configureUsing(fn (Table $table) => $table->paginated([10, 25, 50, 100])->defaultPaginationPageOption(25)->striped()->selectCurrentPageOnly(true));
 
         TrashedFilter::configureUsing(fn (TrashedFilter $filter) => $filter->native(false));
 
