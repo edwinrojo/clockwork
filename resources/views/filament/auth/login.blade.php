@@ -7,13 +7,14 @@
 @section('content')
     {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, scopes: $this->getRenderHookScopes()) }}
 
-    <x-filament-panels::form wire:submit="authenticate">
+    <form wire:submit="authenticate">
         {{ $this->form }}
 
         <x-filament::actions
             :actions="$this->getFormActions()"
+            class="mt-4"
         />
-    </x-filament-panels::form>
+    </form>
 
     @if ($providers = config('services.oauth_providers'))
         <div class="relative flex items-center justify-center text-center">

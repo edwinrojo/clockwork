@@ -3,13 +3,14 @@
 @section('content')
     {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_PASSWORD_RESET_RESET_FORM_BEFORE, scopes: $this->getRenderHookScopes()) }}
 
-    <x-filament-panels::form id="form" wire:submit="resetPassword">
+    <form wire:submit="resetPassword">
         {{ $this->form }}
 
         <x-filament::actions
             :actions="$this->getFormActions()"
+            class="mt-4"
         />
-    </x-filament-panels::form>
+    </form>
 
     {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_PASSWORD_RESET_RESET_FORM_AFTER, scopes: $this->getRenderHookScopes()) }}
 @endsection

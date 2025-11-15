@@ -87,7 +87,8 @@ class Verification extends SimplePage
     {
         return Action::make('resendNotification')
             ->link()
-            ->label(__('filament-panels::pages/auth/email-verification/email-verification-prompt.actions.resend_notification.label').'.')
+            ->label('Resend notification')
+            ->size('sm')
             ->action(function (): void {
                 try {
                     $this->rateLimit(2);
@@ -122,11 +123,11 @@ class Verification extends SimplePage
 
     public function getTitle(): string|Htmlable
     {
-        return __('filament-panels::pages/auth/email-verification/email-verification-prompt.title');
+        return 'Email Verification';
     }
 
     public function getHeading(): string|Htmlable
     {
-        return __('filament-panels::pages/auth/email-verification/email-verification-prompt.heading');
+        return 'Verify Your Email';
     }
 }

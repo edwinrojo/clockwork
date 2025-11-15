@@ -17,6 +17,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard;
@@ -77,7 +78,7 @@ class Login extends \Filament\Auth\Pages\Login
     public function getHeading(): string|Htmlable
     {
         return empty($this->verification)
-            ? __('filament-panels::pages/auth/login.heading')
+            ? 'Sign in'
             : 'Sign in to verify your email address';
     }
 
@@ -164,20 +165,14 @@ class Login extends \Filament\Auth\Pages\Login
         ];
     }
 
-    protected function getForms(): array
+    public function form(Schema $schema): Schema
     {
-        return [
-            'form' => $this->form(
-                $this->makeForm()
-                    ->schema([
-                        $this->getAuthenticationOptionFormComponent(),
-                        $this->getEmailFormComponent(),
-                        $this->getPasswordFormComponent(),
-                        $this->getRememberFormComponent(),
-                    ])
-                    ->statePath('data'),
-            ),
-        ];
+        return $schema->components([
+            $this->getAuthenticationOptionFormComponent(),
+            $this->getEmailFormComponent(),
+            $this->getPasswordFormComponent(),
+            $this->getRememberFormComponent(),
+        ]);
     }
 
     protected function getSocialiteLoginFormAction(string $provider): Action
@@ -191,7 +186,6 @@ class Login extends \Filament\Auth\Pages\Login
     {
         return Radio::make('login_as')
             ->inline()
-            ->inlineLabel(false)
             ->live()
             ->default(fn () => $this->verification['guard'] ?? session()->get('guard') ?? 'web')
             ->hidden(fn () => $this->verification['guard'] ?? false)
@@ -239,7 +233,7 @@ class Login extends \Filament\Auth\Pages\Login
             ->required(false)
             ->markAsRequired()
             ->rule('required')
-            ->hint(filament()->hasPasswordReset() && empty($this->verification) ? new HtmlString(Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()" tabindex="6"> {{ __(\'filament-panels::pages/auth/login.actions.request_password_reset.label\') }}</x-filament::link>')) : null)
+            ->hint(filament()->hasPasswordReset() && empty($this->verification) ? new HtmlString(Blade::render('<x-filament::link :href="filament()->getRequestPasswordResetUrl()" tabindex="6"> Forgot password?</x-filament::link>')) : null)
             ->extraInputAttributes(['tabindex' => 5]);
     }
 

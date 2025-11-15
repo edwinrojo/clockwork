@@ -13,7 +13,9 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Password;
 
 class Reset extends RequestPasswordReset
@@ -69,18 +71,19 @@ class Reset extends RequestPasswordReset
         $this->form->fill();
     }
 
-    protected function getForms(): array
+    public function getHeading(): string|Htmlable
     {
-        return [
-            'form' => $this->form(
-                $this->makeForm()
-                    ->schema([
-                        $this->getTypeFormComponent(),
-                        $this->getEmailFormComponent(),
-                    ])
-                    ->statePath('data'),
-            ),
-        ];
+        return 'Reset Password';
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                $this->getTypeFormComponent(),
+                $this->getEmailFormComponent(),
+            ]);
     }
 
     protected function getTypeFormComponent(): Component
@@ -100,7 +103,7 @@ class Reset extends RequestPasswordReset
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')
-            ->label(__('filament-panels::pages/auth/password-reset/request-password-reset.form.email.label'))
+            ->label('Email')
             ->rules(['required', 'email'])
             ->markAsRequired()
             ->autofocus();

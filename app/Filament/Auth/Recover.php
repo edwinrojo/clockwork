@@ -10,6 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Model;
@@ -49,11 +50,16 @@ class Recover extends ResetPassword
         ]);
     }
 
+    public function getHeading(): string|Htmlable
+    {
+        return 'Reset Password';
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->statePath('data')
-            ->schema([
+            ->components([
                 TextInput::make('type')
                     ->label('Account type')
                     ->disabled()
