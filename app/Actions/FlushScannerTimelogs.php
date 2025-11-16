@@ -17,14 +17,22 @@ class FlushScannerTimelogs
             ->withoutGlobalScopes()
             ->when($year, fn ($query) => $query->whereYear('time', $year))
             ->when($year && $month, fn ($query) => $query->whereMonth('time', $month))
-            ->where(fn ($query) => $query->orWhere('pseudo', 1)->orWhere('recast', true)->orWhereHas('revision'))
+            ->where(fn ($query) => 
+                $query->orWhere('pseudo', true)
+                    ->orWhere('recast', true)
+                    ->orWhere('cloned', true)
+            )
             ->update(['shadow' => true]);
 
         $count = $scanner->timelogs()
             ->withoutGlobalScopes()
             ->when($year, fn ($query) => $query->whereYear('time', $year))
             ->when($year && $month, fn ($query) => $query->whereMonth('time', $month))
-            ->where(fn ($query) => $query->orWhere('pseudo', 0)->orWhere('recast', false)->orWhereDoesntHave('revision'))
+            ->where(fn ($query) => 
+                $query->where('pseudo', false)
+                    ->where('recast', false)
+                    ->where('cloned', false)
+            )
             ->delete();
 
         TimelogsFlushed::dispatch($scanner, $user, $count);

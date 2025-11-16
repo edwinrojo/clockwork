@@ -28,6 +28,7 @@ class Timelog extends Model
         'pseudo' => 'boolean',
         'masked' => 'boolean',
         'recast' => 'boolean',
+        'cloned' => 'boolean',
     ];
 
     protected $temp = [];
@@ -37,18 +38,10 @@ class Timelog extends Model
         static::addGlobalScope('excludeShadow', fn (Builder $builder) => $builder->where('shadow', false));
 
         static::addGlobalScope('excludeMasked', fn (Builder $builder) => $builder->where('masked', false));
-    
-        static::addGlobalScope('excludeRecasted', function (Builder $builder) {
-            $builder->whereNot(function (Builder $builder) {
-                $builder->orWhereExists(function ($builder) {
-                    $builder->from('timelogs as sub')->whereColumn('sub.timelog_id', 'timelogs.id')->where('sub.recast', true);
-                });
-    
-                $builder->orWhere(function ($builder) {
-                    $builder->where('recast', true)->whereNull('timelog_id');
-                });
-            });
-        });
+
+        static::addGlobalScope('excludeCloned', fn (Builder $builder) => $builder->where('cloned', false));
+        
+        static::addGlobalScope('excludeOrphan', fn (Builder $builder) => $builder->where('orphan', false));
     }
 
     public function state(): Attribute
