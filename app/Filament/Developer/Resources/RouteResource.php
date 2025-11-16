@@ -32,7 +32,7 @@ class RouteResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Section::make('Route information')
                     ->schema([

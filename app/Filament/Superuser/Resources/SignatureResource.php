@@ -89,7 +89,7 @@ class SignatureResource extends Resource
             }
         };
 
-        return $form
+        return $schema
             ->columns(3)
             ->schema([
                 $signaturable::make('signaturable')

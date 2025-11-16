@@ -31,7 +31,7 @@ class HolidayResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Select::make('type')
                     ->live()

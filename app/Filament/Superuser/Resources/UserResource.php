@@ -36,7 +36,7 @@ class UserResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Section::make('Information and Credentials')
                     ->columns(3)
