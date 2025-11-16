@@ -87,6 +87,12 @@ class OauthController extends SocialiteLoginController
             throw ProviderNotConfigured::make($provider);
         }
 
+        if (request()->has('error')) {
+            $errorDescription = request()->input('error_description', 'Authorization was cancelled or denied.');
+
+            return $this->redirectToLogin($errorDescription);
+        }
+
         $oauthUser = $this->retrieveOauthUser($provider);
 
         if (! array_key_exists('email', $oauthUser->user)) {
