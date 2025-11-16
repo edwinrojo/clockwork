@@ -6,10 +6,10 @@
 
 <div class="min-h-screen flex items-center justify-center relative">
     @if($svgBase64)
-        <div class="bg-cover absolute inset-0 h-full w-full bg-center z-0" style="background-image: url('{{ $svgBase64 }}') !important;"></div>
+        <div class="bg-cover absolute inset-0 h-full w-full bg-center z-1" style="background-image: url('{{ $svgBase64 }}') !important;"></div>
     @endif
 
-    <div class="absolute inset-0 bg-gray-500! bg-opacity-30!"></div>
+    <div class="absolute inset-0 bg-gray-900! dark:bg-gray-50! bg-opacity-30!"></div>
 
     <div class="relative z-10 bg-gray-100! dark:bg-gray-800! lg:rounded-lg overflow-hidden w-full max-w-5xl grid grid-cols-1 md:grid-cols-2">
         <div class="p-8 flex flex-col justify-center">

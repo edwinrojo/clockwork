@@ -18,14 +18,14 @@
 
     @if ($providers = config('services.oauth_providers'))
         <div class="relative flex items-center justify-center text-center">
-            <div class="absolute w-[calc(100%-2rem)] h-px border-t border-gray-200 mr-8"></div>
-            <p class="relative tracking-tight inline-flex items-center p-2 px-4 text-sm font-medium text-gray-500 bg-white rounded-full dark:bg-gray-700 dark:text-gray-100">
+            <div class="absolute w-[calc(100%-2rem)] h-px border-t border-gray-200! mr-8"></div>
+            <p class="relative tracking-tight inline-flex items-center p-2 px-4 text-sm font-medium text-gray-500! bg-white! rounded-full dark:bg-gray-700! dark:text-gray-100!">
                 Or log in via
             </p>
             <div class="absolute w-full justify-items-end">
                 <svg
                     style="--c-400:var(--gray-400);--c-500:var(--gray-500);"
-                    class="w-5 h-5 ml-2 text-gray-400 fi-fo-field-wrp-hint-icon dark:text-gray-500"
+                    class="w-5 h-5 ml-2 text-gray-400! fi-fo-field-wrp-hint-icon dark:text-gray-500!"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -68,7 +68,7 @@
     @php($pp = settings('pp'))
 
     @if ($ua || $pp)
-        <div class="text-sm text-center text-gray-500">
+        <div class="text-sm text-center text-gray-500!">
             <p>
                 By continuing, you agree to our
                 @if ($pp)
