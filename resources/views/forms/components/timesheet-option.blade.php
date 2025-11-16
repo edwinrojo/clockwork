@@ -144,23 +144,23 @@
                 Nothing to verify.
             </span>
         @else
-            <x-filament::grid
-                :default="$getColumns('default')"
-                :sm="$getColumns('sm')"
-                :md="$getColumns('md')"
-                :lg="$getColumns('lg')"
-                :xl="$getColumns('xl')"
-                :two-xl="$getColumns('2xl')"
-                :direction="$gridDirection"
-                :x-show="$isSearchable ? 'visibleCheckboxListOptions.length' : null"
-                :attributes="
+            <div
+                @if($isSearchable)
+                    x-show="visibleCheckboxListOptions.length"
+                @endif
+                @style([
+                    'grid-template-columns: repeat('.($getColumns('default') ?: '1').', minmax(0, 1fr))' => $gridDirection !== 'column' && $getColumns('default'),
+                ])
+                @class([
+                    'fi-fo-checkbox-list gap-4',
+                    '-mt-4' => $gridDirection === 'column',
+                    'grid' => $gridDirection !== 'column',
+                    'flex flex-col' => $gridDirection === 'column',
+                ])
+                {{
                     \Filament\Support\prepare_inherited_attributes($attributes)
                         ->merge($getExtraAttributes(), escape: false)
-                        ->class([
-                            'fi-fo-checkbox-list gap-4',
-                            '-mt-4' => $gridDirection === 'column',
-                        ])
-                "
+                }}
             >
 
                 @forelse ($getOptions() as $value => $label)
@@ -234,7 +234,7 @@
                         wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.empty"
                     ></div>
                 @endforelse
-            </x-filament::grid>
+            </div>
         @endif
 
         @if ($isSearchable)
