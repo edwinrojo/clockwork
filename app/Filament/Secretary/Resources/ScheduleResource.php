@@ -31,6 +31,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ScheduleResource extends Resource
 {
+    protected static bool $isDiscovered = false;
+
     protected static ?string $model = Schedule::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'gmdi-punch-clock-o';
