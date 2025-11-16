@@ -13,6 +13,7 @@ use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
 use DutchCodingCompany\FilamentSocialite\Http\Controllers\SocialiteLoginController;
 use DutchCodingCompany\FilamentSocialite\Http\Middleware\PanelFromUrlQuery;
 use DutchCodingCompany\FilamentSocialite\Models\Contracts\FilamentSocialiteUser;
+use Filament\Facades\Filament;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -168,7 +169,22 @@ class OauthController extends SocialiteLoginController
 
     protected function plugin(): FilamentSocialitePlugin
     {
-        return $this->plugin ??= parent::plugin();
+        if ($this->plugin !== null) {
+            return $this->plugin;
+        }
+
+        $panel = Filament::getPanel('auth');
+        $plugins = $panel->getPlugins();
+
+        foreach ($plugins as $plugin) {
+            if ($plugin instanceof FilamentSocialitePlugin) {
+                $this->plugin = $plugin;
+
+                return $this->plugin;
+            }
+        }
+
+        throw new \RuntimeException('FilamentSocialitePlugin not found in auth panel.');
     }
 
     protected function getModel(): string
