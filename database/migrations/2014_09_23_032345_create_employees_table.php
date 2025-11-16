@@ -11,6 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::createExtensionIfNotExists('pg_trgm');
+        
         Schema::create('employees', function (Blueprint $table) {
             $first_name = 'first_name';
             $middle_name = "CASE WHEN TRIM(BOTH '' FROM middle_name) = '' THEN '' ELSE ', ' END || TRIM(BOTH '' FROM middle_name)";
@@ -45,7 +47,10 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
-            $table->unique(['first_name', 'middle_name', 'last_name', 'qualifier_name'], 'unique_employee');
+            
+            $table->unique(['first_name', 'middle_name', 'last_name', 'qualifier_name'], 'employees_unique');
+            $table->rawIndex("name gin_trgm_ops", 'employees_name_idx')->algorithm('gin');
+            $table->rawIndex("full_name gin_trgm_ops", 'employees_full_name_idx')->algorithm('gin');
         });
     }
 

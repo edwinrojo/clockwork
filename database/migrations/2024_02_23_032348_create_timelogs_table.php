@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Tpetry\PostgresqlEnhanced\Schema\Blueprint;
-use Tpetry\PostgresqlEnhanced\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -68,7 +68,7 @@ return new class extends Migration
                 ->change();
             
             $table->trigger(
-                'trg_timelogs_compute_cloned',
+                'trigger_timelogs_compute_cloned',
                 'timelogs_compute_cloned()',
                 'BEFORE INSERT OR UPDATE'
             )->forEachRow();
@@ -81,7 +81,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('timelogs', function (Blueprint $table) {
-            $table->dropTrigger('trg_timelogs_compute_cloned');
+            $table->dropTrigger('trigger_timelogs_compute_cloned');
         });
 
         Schema::dropFunction('timelogs_compute_cloned');

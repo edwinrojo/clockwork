@@ -19,8 +19,13 @@ return new class extends Migration
             $table->unsignedSmallInteger('device')->nullable()->index();
             $table->boolean('active')->default(true);
             $table->timestamps();
+
             $table->unique(['employee_id', 'scanner_id']);
             $table->unique(['scanner_id', 'uid']);
+            $table->index(['uid', 'device'], 'enrollment_uid_device_active_idx')
+                ->where('active', true);
+            $table->index(['employee_id', 'uid', 'device'])
+                ->where('active', true);
         });
     }
 
