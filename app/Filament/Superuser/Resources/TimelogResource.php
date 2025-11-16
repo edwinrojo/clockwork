@@ -18,7 +18,9 @@ use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class TimelogResource extends Resource
 {
@@ -37,6 +39,31 @@ class TimelogResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                if (static::class === self::class) {
+                    return;
+                }
+
+                $base = (clone $query)
+                    ->join('enrollment', function ($join) {
+                        $join->on('enrollment.uid', '=', 'timelogs.uid')
+                            ->on('enrollment.device', '=', 'timelogs.device')
+                            ->where('enrollment.active', true);
+                    })
+                    ->select([
+                        'timelogs.*',
+                        DB::raw('ROW_NUMBER() OVER (
+                            PARTITION BY DATE(time), enrollment.employee_id
+                            ORDER BY time ASC
+                        ) AS limitation')
+                    ]);
+            
+                $query->fromSub($base, 'timelogs')
+                    ->withoutGlobalScopes()
+                    ->select('timelogs.*')
+                    ->where('timelogs.limitation', '<=', 10)
+                    ->with('original');
+            })
             ->columns([
                 TextColumn::make('scanner.name')
                     ->searchable(isIndividual: true, isGlobal: false)

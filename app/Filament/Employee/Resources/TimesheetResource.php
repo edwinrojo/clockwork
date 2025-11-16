@@ -64,10 +64,10 @@ class TimesheetResource extends Resource
         return $table
             ->filters(static::tableFilters())
             ->columns([
-                TextColumn::make('month')
-                    ->extraCellAttributes(['class' => 'font-mono'])
-                    ->state(fn (Timesheet $record) => Carbon::parse($record->month)->format('M Y'))
-                    ->sortable(),
+                // TextColumn::make('month')
+                //     ->extraCellAttributes(['class' => 'font-mono'])
+                //     ->state(fn (Timesheet $record) => Carbon::parse($record->month)->format('M Y'))
+                //     ->sortable(),
                 TextColumn::make('period')
                     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
                     ->extraCellAttributes(['class' => 'font-mono'])
@@ -98,21 +98,21 @@ class TimesheetResource extends Resource
                     ->alignEnd()
                     ->extraCellAttributes(['class' => 'font-mono'])
                     ->toggleable(),
-                TextColumn::make('export.created_at')
-                    ->label('Certified')
-                    ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
-                    ->since()
-                    ->dateTimeTooltip(),
-                TextColumn::make('leaderSigner.created_at')
-                    ->label(str(settings('leader') ?? 'leader')->title())
-                    ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
-                    ->since()
-                    ->dateTimeTooltip(),
-                TextColumn::make('directorSigner.created_at')
-                    ->label(str(settings('director') ?? 'director')->title())
-                    ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
-                    ->since()
-                    ->dateTimeTooltip(),
+                // TextColumn::make('export.created_at')
+                //     ->label('Certified')
+                //     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
+                //     ->since()
+                //     ->dateTimeTooltip(),
+                // TextColumn::make('leaderSigner.created_at')
+                //     ->label(str(settings('leader') ?? 'leader')->title())
+                //     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
+                //     ->since()
+                //     ->dateTimeTooltip(),
+                // TextColumn::make('directorSigner.created_at')
+                //     ->label(str(settings('director') ?? 'director')->title())
+                //     ->hidden(fn ($livewire) => $livewire->activeTab === 'Monthly')
+                //     ->since()
+                //     ->dateTimeTooltip(),
             ])
             ->recordActions([
                 ActionGroup::make([

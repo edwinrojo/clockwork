@@ -50,7 +50,7 @@ class PreviewTimesheet extends ViewRecord
 
     public function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Group::make()
                     ->columnSpanFull()

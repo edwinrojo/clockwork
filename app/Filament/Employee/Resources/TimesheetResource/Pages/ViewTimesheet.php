@@ -51,24 +51,26 @@ class ViewTimesheet extends ViewRecord
             $this->navigate('prev'),
             $this->navigate('next'),
             $this->period(),
-            $this->annotate(),
-            ActionGroup::make([
+            // $this->annotate(),
+            // ActionGroup::make([
                 $this->rectify(),
-                $this->certify(),
-            ]),
+            //     $this->certify(),
+            // ]),
         ];
     }
 
     public function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Group::make()
                     ->columnSpanFull()
                     ->columns(12)
                     ->schema([
-                        TextEntry::make('timesheet')
+                        TextEntry::make('timesheet_preview')
+                            ->label('Timesheet')
                             ->columnSpan(5)
+                            ->state('preview')
                             ->formatStateUsing(function (): View {
                                 $period = isset($this->filters['period'])
                                     ? ($this->filters['period'] instanceof TimesheetPeriod ? $this->filters['period']->value : $this->filters['period'])
@@ -80,8 +82,10 @@ class ViewTimesheet extends ViewRecord
                                     'month' => false,
                                 ]);
                             }),
-                        TextEntry::make('timelogs')
+                        TextEntry::make('timelogs_preview')
+                            ->label('Timelogs')
                             ->columnSpan(7)
+                            ->state('preview')
                             ->formatStateUsing(function (): View {
                                 $period = isset($this->filters['period'])
                                     ? ($this->filters['period'] instanceof TimesheetPeriod ? $this->filters['period']->value : $this->filters['period'])
@@ -94,7 +98,10 @@ class ViewTimesheet extends ViewRecord
                                 $to = $period === '1st' ? 15 : $month->daysInMonth();
 
                                 return view('filament.validation.pages.default', [
-                                    'employees' => [$this->record->employee->load(['scanners', 'timelogs'])],
+                                    'employees' => [$this->record->employee->load([
+                                        'timelogs' => fn ($query) => $query->whereBetween('time', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()]),
+                                        'scanners',
+                                    ])],
                                     'month' => $month,
                                     'period' => $this->filters['period'] ?? 'full',
                                     'from' => $from,

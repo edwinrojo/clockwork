@@ -46,20 +46,20 @@ class ListTimesheets extends ListRecords
             // $this->generate(),
             ActionGroup::make([
                 // $this->generate(),
-                $this->downloadBlankTimesheet(),
+                // $this->downloadBlankTimesheet(),
             ]),
         ];
     }
 
-    public function getTabs(): array
-    {
-        return [
-            'Monthly' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('span', 'full')),
-            'Certified' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query) => $query->certified()),
-        ];
-    }
+    // public function getTabs(): array
+    // {
+    //     return [
+    //         'Monthly' => Tab::make()
+    //             ->modifyQueryUsing(fn (Builder $query) => $query->where('span', 'full')),
+    //         'Certified' => Tab::make()
+    //             ->modifyQueryUsing(fn (Builder $query) => $query->certified()),
+    //     ];
+    // }
 
     protected function generate(): Action
     {
