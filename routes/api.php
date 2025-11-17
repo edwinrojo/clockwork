@@ -37,7 +37,7 @@ Route::middleware(['auth:sanctum', ForceAcceptJson::class])->group(function () {
 
     Route::apiResource('offices', OfficeController::class)->only(['index', 'show']);
     Route::apiResource('offices.employees', EmployeeController::class)->only(['index', 'show'])->scoped();
-    
+
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
     Route::apiResource('employees.scanners', ScannerController::class)->only(['index', 'show'])->scoped();
     Route::apiResource('employees.offices', OfficeController::class)->only(['index', 'show'])->scoped();

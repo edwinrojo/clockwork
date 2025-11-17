@@ -40,7 +40,7 @@ class Timelog extends Model
         static::addGlobalScope('excludeMasked', fn (Builder $builder) => $builder->where('masked', false));
 
         static::addGlobalScope('excludeCloned', fn (Builder $builder) => $builder->where('cloned', false));
-        
+
         static::addGlobalScope('excludeOrphan', fn (Builder $builder) => $builder->where('orphan', false));
     }
 

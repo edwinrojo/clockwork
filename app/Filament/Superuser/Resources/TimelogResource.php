@@ -55,9 +55,9 @@ class TimelogResource extends Resource
                         DB::raw('ROW_NUMBER() OVER (
                             PARTITION BY DATE(time), enrollment.employee_id
                             ORDER BY time ASC
-                        ) AS limitation')
+                        ) AS limitation'),
                     ]);
-            
+
                 $query->fromSub($base, 'timelogs')
                     ->withoutGlobalScopes()
                     ->select('timelogs.*')

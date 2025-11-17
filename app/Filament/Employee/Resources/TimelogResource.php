@@ -35,7 +35,7 @@ class TimelogResource extends Resource
                         DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(time) ORDER BY time ASC) AS limitation'),
                     ])
                     ->whereHas('employee', fn ($q) => $q->whereKey(Auth::id()));
-            
+
                 $query->fromSub($base, 'timelogs')
                     ->withoutGlobalScopes()
                     ->select('timelogs.*')

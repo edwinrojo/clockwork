@@ -32,7 +32,7 @@ class UpdateEmployeeAction extends Action
         $this->name ??= 'update-employee-enrollment';
 
         $this->requiresConfirmation();
-        
+
         $this->modalAlignment('start');
 
         $this->label('Update');
@@ -311,9 +311,9 @@ class UpdateEmployeeAction extends Action
             //                             ->required()
             //                             // ->rule(fn (Get $get) => function ($attribute, $value, $fail) use ($get) {
             //                             //     // dd($value, $get('id'));
-                                            
+
             //                             //     if (
-            //                             //         $value && 
+            //                             //         $value &&
             //                             //         Group::withoutGlobalScopes()
             //                             //             ->where('id', $value)
             //                             //             ->whereNot('id', $get('id'))

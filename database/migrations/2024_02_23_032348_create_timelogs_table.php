@@ -35,8 +35,7 @@ return new class extends Migration
             parameters: [],
             return: 'trigger',
             language: 'plpgsql',
-            body: 
-                <<<'SQL'
+            body: <<<'SQL'
                 BEGIN
                     NEW.cloned :=
                         EXISTS (
@@ -66,7 +65,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete()
                 ->change();
-            
+
             $table->trigger(
                 'trigger_timelogs_compute_cloned',
                 'timelogs_compute_cloned()',

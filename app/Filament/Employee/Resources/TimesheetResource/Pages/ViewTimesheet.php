@@ -53,7 +53,7 @@ class ViewTimesheet extends ViewRecord
             $this->period(),
             // $this->annotate(),
             // ActionGroup::make([
-                $this->rectify(),
+            $this->rectify(),
             //     $this->certify(),
             // ]),
         ];

@@ -17,10 +17,9 @@ class FlushScannerTimelogs
             ->withoutGlobalScopes()
             ->when($year, fn ($query) => $query->whereYear('time', $year))
             ->when($year && $month, fn ($query) => $query->whereMonth('time', $month))
-            ->where(fn ($query) => 
-                $query->orWhere('pseudo', true)
-                    ->orWhere('recast', true)
-                    ->orWhere('cloned', true)
+            ->where(fn ($query) => $query->orWhere('pseudo', true)
+                ->orWhere('recast', true)
+                ->orWhere('cloned', true)
             )
             ->update(['shadow' => true]);
 
@@ -28,10 +27,9 @@ class FlushScannerTimelogs
             ->withoutGlobalScopes()
             ->when($year, fn ($query) => $query->whereYear('time', $year))
             ->when($year && $month, fn ($query) => $query->whereMonth('time', $month))
-            ->where(fn ($query) => 
-                $query->where('pseudo', false)
-                    ->where('recast', false)
-                    ->where('cloned', false)
+            ->where(fn ($query) => $query->where('pseudo', false)
+                ->where('recast', false)
+                ->where('cloned', false)
             )
             ->delete();
 
