@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\FetchController;
 use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\OfficeController;
+use App\Http\Controllers\Api\ScannerController;
 use App\Http\Controllers\Api\SignerController;
 use App\Http\Controllers\Api\TimesheetController;
 use App\Http\Middleware\ForceAcceptJson;
@@ -28,6 +31,16 @@ Route::middleware(['auth:sanctum', ForceAcceptJson::class])->group(function () {
     Route::get('holiday', HolidayController::class);
 
     Route::post('signer', SignerController::class);
+
+    Route::apiResource('scanners', ScannerController::class)->only(['index', 'show']);
+    Route::apiResource('scanners.employees', EmployeeController::class)->only(['index', 'show'])->scoped();
+
+    Route::apiResource('offices', OfficeController::class)->only(['index', 'show']);
+    Route::apiResource('offices.employees', EmployeeController::class)->only(['index', 'show'])->scoped();
+    
+    Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
+    Route::apiResource('employees.scanners', ScannerController::class)->only(['index', 'show'])->scoped();
+    Route::apiResource('employees.offices', OfficeController::class)->only(['index', 'show'])->scoped();
 
     Route::controller(FetchController::class)
         ->prefix('fetch')
