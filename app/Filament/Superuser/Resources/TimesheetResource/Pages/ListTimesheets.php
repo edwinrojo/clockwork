@@ -140,20 +140,22 @@ class ListTimesheets extends ListRecords
                             ->multiple()
                             ->searchable(),
                         Select::make('substatus')
-                            ->visible(function (callable $get) {
-                                $visibleOn = [
-                                    EmploymentStatus::CONTRACTUAL->value,
-                                ];
+                            // ->visible(function (callable $get) {
+                            //     $visibleOn = [
+                            //         EmploymentStatus::CONTRACTUAL->value,
+                            //     ];
 
-                                return count(array_diff($visibleOn, $get('status') ?? [])) < count($visibleOn);
-                            })
+                            //     $statuses = array_map(fn ($status) => $status->value, $get('status') ?? []);
+
+                            //     return count(array_diff($visibleOn, $statuses ?? [])) < count($visibleOn);
+                            // })
                             ->options(EmploymentSubstatus::class)
                             ->placeholder('All')
                             ->multiple()
                             ->searchable(),
                     ])
                     ->query(function (Builder $query, array $data) {
-                        if (! isset($data['status'])) {
+                        if (! isset($data['status']) && ! isset($data['substatus'])) {
                             return;
                         }
 

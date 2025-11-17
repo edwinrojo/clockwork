@@ -53,7 +53,9 @@ class StatusFilter extends Filter
                         EmploymentStatus::CONTRACTUAL->value,
                     ];
 
-                    return count(array_diff($visibleOn, $get('status') ?? [])) < count($visibleOn);
+                    $statuses = array_map(fn ($status) => $status->value, $get('status') ?? []);
+
+                    return count(array_diff($visibleOn, $statuses ?? [])) < count($visibleOn);
                 })
                 ->options(EmploymentSubstatus::class)
                 ->placeholder('All')
