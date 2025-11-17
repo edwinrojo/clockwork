@@ -9,12 +9,16 @@ alwaysApply: true
     - Services
     - Repositories
 - With concerns separated, there must be no fat controllers nor models.
+- Always put phpdoc to methods indicating parameter and return type.
 - Always type hint parameters and return types.
 - Always import classes do not use full namespaces.
 - Use single name as much as possible. ASK FIRST if you cannot find suitable one.
+    - Constants
     - Variables
     - Models
     - Classes
     - Attributes
     - etc.
 - Always refer to @laravel-boost for implementation guide.
+- Always prefer early returns over nested arrays. 
+    - If return conditions are just simple, use `match (true)`;
