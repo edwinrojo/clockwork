@@ -12,7 +12,7 @@ alwaysApply: true
 - Always put phpdoc to methods indicating parameter and return type.
 - Always type hint parameters and return types.
 - Always import classes do not use full namespaces.
-- Use single name as much as possible. ASK FIRST if you cannot find suitable one.
+- Use single word name as much as possible. ASK FIRST if you cannot find suitable one.
     - Constants
     - Variables
     - Models
