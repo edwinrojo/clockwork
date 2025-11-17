@@ -94,7 +94,7 @@ class EmployeeController extends Controller
 
             $this->order($query);
 
-            $paginate = min(max((int) $request->get('paginate', 15), 1), 100);
+            $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
             $employees = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
@@ -112,7 +112,7 @@ class EmployeeController extends Controller
 
             $this->order($query);
 
-            $paginate = min(max((int) $request->get('paginate', 15), 1), 100);
+            $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
             $employees = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
@@ -163,7 +163,7 @@ class EmployeeController extends Controller
             return new EmployeeResource($query->firstOrFail());
         }
 
-        $employee->load('scanners');
+        $employee->load(['scanners', 'offices']);
 
         return new EmployeeResource($employee);
     }

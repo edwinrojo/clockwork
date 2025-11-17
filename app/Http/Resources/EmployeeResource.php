@@ -23,18 +23,30 @@ class EmployeeResource extends JsonResource
 
         if ($this->relationLoaded('pivot') && isset($this->pivot->uid)) {
             $data['uid'] = $this->pivot->uid;
-        } elseif (isset($this->pivot_uid)) {
-            $data['uid'] = $this->pivot_uid;
         }
 
         if ($this->relationLoaded('scanners')) {
-            $data['scanners'] = $this->scanners->map(function ($scanner) {
-                return [
-                    'id' => $scanner->id,
-                    'name' => $scanner->name,
-                    'uid' => $scanner->pivot->uid ?? null,
-                ];
-            });
+            $data['scanners'] = ScannerResource::collection($this->scanners)
+                ->map(function ($resource) use ($request) {
+                    $array = $resource->toArray($request);
+
+                    $array['uid'] = $resource->resource->pivot->uid ?? null;
+                    $array['active'] = $resource->resource->pivot->active ?? null;
+
+                    return $array;
+                });
+        }
+
+        if ($this->relationLoaded('offices')) {
+            $data['offices'] = OfficeResource::collection($this->offices)
+                ->map(function ($resource) use ($request) {
+                    $array = $resource->toArray($request);
+
+                    $array['current'] = $resource->resource->pivot->current ?? null;
+                    $array['active'] = $resource->resource->pivot->active ?? null;
+
+                    return $array;
+                });
         }
 
         return $data;

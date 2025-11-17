@@ -10,11 +10,12 @@ class ScannerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'uid' => $this->uid,
             'priority' => $this->priority,
             'active' => $this->active,
-            'synced_at' => $this->synced_at,
+            'synced' => $this->synced_at,
         ];
     }
 }

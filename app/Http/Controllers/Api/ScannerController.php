@@ -61,7 +61,7 @@ class ScannerController extends Controller
 
             $this->order($query);
 
-            $paginate = min(max((int) $request->get('paginate', 15), 1), 100);
+            $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
             $scanners = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
