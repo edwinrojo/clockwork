@@ -58,6 +58,14 @@ class EmployeeController extends Controller
             $q->where('employees.qualifier_name', 'ilike', '%'.$value.'%');
         });
 
+        $query->when($request->get('status'), function (Builder $q, string $value): void {
+            $q->where('employees.status', 'ilike', '%'.$value.'%');
+        });
+
+        $query->when($request->get('substatus'), function (Builder $q, string $value): void {
+            $q->where('employees.substatus', 'ilike', '%'.$value.'%');
+        });
+
         $query->when($request->get('search'), function (Builder $q, string $value): void {
             foreach (array_filter(preg_split('/\s+/', trim($value))) as $word) {
                 $q->whereAny([
