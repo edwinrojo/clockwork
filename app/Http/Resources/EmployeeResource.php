@@ -19,6 +19,10 @@ class EmployeeResource extends JsonResource
             'qualifier_name' => $this->qualifier_name,
             'status' => $this->status,
             'substatus' => $this->substatus,
+            'tag' => $this->uid,
+            'email' => $this->email,
+            'birthdate' => $this->birthdate,
+            'sex' => $this->sex,
         ];
 
         if ($this->relationLoaded('pivot') && isset($this->pivot->uid)) {
@@ -43,6 +47,17 @@ class EmployeeResource extends JsonResource
                     $array = $resource->toArray($request);
 
                     $array['current'] = $resource->resource->pivot->current ?? null;
+                    $array['active'] = $resource->resource->pivot->active ?? null;
+
+                    return $array;
+                });
+        }
+
+        if ($this->relationLoaded('groups')) {
+            $data['groups'] = GroupResource::collection($this->groups)
+                ->map(function ($resource) use ($request) {
+                    $array = $resource->toArray($request);
+
                     $array['active'] = $resource->resource->pivot->active ?? null;
 
                     return $array;

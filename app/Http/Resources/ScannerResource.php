@@ -9,7 +9,7 @@ class ScannerResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'name' => $this->name,
             'uid' => $this->uid,
@@ -17,5 +17,11 @@ class ScannerResource extends JsonResource
             'active' => $this->active,
             'synced' => $this->synced_at,
         ];
+
+        if (isset($this->employees_count)) {
+            $data['employees'] = $this->employees_count;
+        }
+
+        return $data;
     }
 }

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ScannerResource;
 use App\Models\Employee;
 use App\Models\Scanner;
-use App\Services\EnrollmentFilterService;
+use App\Services\ActiveFilterService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\Request;
@@ -23,9 +23,12 @@ class ScannerController extends Controller
     ];
 
     public function __construct(
-        private EnrollmentFilterService $enrollmentFilterService
+        private ActiveFilterService $activeFilterService
     ) {}
 
+    /**
+     * Apply search filters to the query.
+     */
     private function filter(Builder|BelongsToMany $query, Request $request): void
     {
         $query->when($request->get('search'), function (Builder $q, string $value): void {
@@ -37,9 +40,36 @@ class ScannerController extends Controller
         });
     }
 
+    /**
+     * Apply ordering to the query.
+     */
     private function order(Builder|BelongsToMany $query): void
     {
         $query->orderBy('scanners.priority')->orderBy('scanners.name');
+    }
+
+    /**
+     * Apply enrollment active/inactive filter to the query.
+     */
+    private function enrollment(Builder|BelongsToMany $query, Request $request): void
+    {
+        $this->activeFilterService->applyActiveFilter($query, [
+            'pivot' => true,
+            'active' => filter_var($request->get('active', true), FILTER_VALIDATE_BOOLEAN),
+            'inactive' => filter_var($request->get('inactive', false), FILTER_VALIDATE_BOOLEAN),
+        ]);
+    }
+
+    /**
+     * Apply scanner active/inactive filter to the query.
+     */
+    private function scanner(Builder $query, Request $request): void
+    {
+        $this->activeFilterService->applyActiveFilter($query, [
+            'table' => 'scanners',
+            'active' => filter_var($request->get('active', true), FILTER_VALIDATE_BOOLEAN),
+            'inactive' => filter_var($request->get('inactive', false), FILTER_VALIDATE_BOOLEAN),
+        ]);
     }
 
     /**
@@ -51,11 +81,10 @@ class ScannerController extends Controller
     {
         if ($employee) {
             $query = $employee->scanners()
-                ->select(self::FIELDS);
+                ->select(self::FIELDS)
+                ->withCount('employees');
 
-            $active = filter_var($request->get('active', true), FILTER_VALIDATE_BOOLEAN);
-            $inactive = filter_var($request->get('inactive', false), FILTER_VALIDATE_BOOLEAN);
-            $this->enrollmentFilterService->applyEnrollmentActiveFilter($query, $active, $inactive);
+            $this->enrollment($query, $request);
 
             $this->filter($query, $request);
 
@@ -68,17 +97,16 @@ class ScannerController extends Controller
             return ScannerResource::collection($scanners);
         }
 
-        $query = Scanner::query();
+        $query = Scanner::query()
+            ->withCount('employees');
 
         $this->filter($query, $request);
 
-        $active = filter_var($request->get('active', true), FILTER_VALIDATE_BOOLEAN);
-        $inactive = filter_var($request->get('inactive', false), FILTER_VALIDATE_BOOLEAN);
-        $this->enrollmentFilterService->applyScannerActiveFilter($query, $active, $inactive);
+        $this->scanner($query, $request);
 
         $this->order($query);
 
-        $paginate = min(max((int) $request->get('paginate', 15), 1), 100);
+        $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
         $scanners = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
@@ -99,14 +127,15 @@ class ScannerController extends Controller
         if ($employee) {
             $query = $employee->scanners()
                 ->where('scanners.id', $scanner->id)
-                ->select(self::FIELDS);
+                ->select(self::FIELDS)
+                ->withCount('employees');
 
-            $active = filter_var($request->get('active', true), FILTER_VALIDATE_BOOLEAN);
-            $inactive = filter_var($request->get('inactive', false), FILTER_VALIDATE_BOOLEAN);
-            $this->enrollmentFilterService->applyEnrollmentActiveFilter($query, $active, $inactive);
+            $this->enrollment($query, $request);
 
             return new ScannerResource($query->firstOrFail());
         }
+
+        $scanner->loadCount('employees');
 
         return new ScannerResource($scanner);
     }

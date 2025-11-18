@@ -4,17 +4,14 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
-class OfficeResource extends JsonResource
+class GroupResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         $data = [
             'id' => $this->id,
             'name' => $this->name,
-            'code' => $this->code,
-            'logo' => $this->logo ? Storage::disk('public')->url($this->logo) : null,
         ];
 
         if (isset($this->employees_count)) {

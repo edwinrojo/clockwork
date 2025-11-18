@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\FetchController;
+use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\OfficeController;
 use App\Http\Controllers\Api\ScannerController;
@@ -38,9 +39,13 @@ Route::middleware(['auth:sanctum', ForceAcceptJson::class])->group(function () {
     Route::apiResource('offices', OfficeController::class)->only(['index', 'show']);
     Route::apiResource('offices.employees', EmployeeController::class)->only(['index', 'show'])->scoped();
 
+    Route::apiResource('groups', GroupController::class)->only(['index', 'show']);
+    Route::apiResource('groups.employees', EmployeeController::class)->only(['index', 'show'])->scoped();
+
     Route::apiResource('employees', EmployeeController::class)->only(['index', 'show']);
     Route::apiResource('employees.scanners', ScannerController::class)->only(['index', 'show'])->scoped();
     Route::apiResource('employees.offices', OfficeController::class)->only(['index', 'show'])->scoped();
+    Route::apiResource('employees.groups', GroupController::class)->only(['index', 'show'])->scoped();
 
     Route::controller(FetchController::class)
         ->prefix('fetch')

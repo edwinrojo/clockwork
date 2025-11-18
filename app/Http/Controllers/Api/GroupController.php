@@ -3,21 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\OfficeResource;
+use App\Http\Resources\GroupResource;
 use App\Models\Employee;
-use App\Models\Office;
+use App\Models\Group;
 use App\Services\ActiveFilterService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\Request;
 
-class OfficeController extends Controller
+class GroupController extends Controller
 {
     private const FIELDS = [
-        'offices.id',
-        'offices.name',
-        'offices.code',
-        'offices.logo',
+        'groups.id',
+        'groups.name',
     ];
 
     public function __construct(
@@ -30,10 +28,7 @@ class OfficeController extends Controller
     private function filter(Builder|BelongsToMany $query, Request $request): void
     {
         $query->when($request->get('search'), function (Builder $q, string $value): void {
-            $q->whereAny([
-                'offices.name',
-                'offices.code',
-            ], 'ilike', '%'.$value.'%');
+            $q->where('groups.name', 'ilike', '%'.$value.'%');
         });
     }
 
@@ -42,7 +37,7 @@ class OfficeController extends Controller
      */
     private function order(Builder|BelongsToMany $query): void
     {
-        $query->orderBy('offices.code');
+        $query->orderBy('groups.name');
     }
 
     /**
@@ -65,7 +60,7 @@ class OfficeController extends Controller
     public function index(Request $request, ?Employee $employee = null)
     {
         if ($employee) {
-            $query = $employee->offices()
+            $query = $employee->groups()
                 ->select(self::FIELDS)
                 ->withCount('employees');
 
@@ -77,12 +72,12 @@ class OfficeController extends Controller
 
             $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
-            $offices = $query->paginate($paginate, pageName: 'page')->appends($request->query());
+            $groups = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
-            return OfficeResource::collection($offices);
+            return GroupResource::collection($groups);
         }
 
-        $query = Office::query()
+        $query = Group::query()
             ->select(self::FIELDS)
             ->withCount('employees');
 
@@ -92,31 +87,31 @@ class OfficeController extends Controller
 
         $paginate = min(max((int) $request->get('paginate', 100), 1), 1000);
 
-        $offices = $query->paginate($paginate, pageName: 'page')->appends($request->query());
+        $groups = $query->paginate($paginate, pageName: 'page')->appends($request->query());
 
-        return OfficeResource::collection($offices);
+        return GroupResource::collection($groups);
     }
 
     /**
      * Display the specified resource.
      *
-     * @return OfficeResource
+     * @return GroupResource
      */
-    public function show(Request $request, Office $office, ?Employee $employee = null)
+    public function show(Request $request, Group $group, ?Employee $employee = null)
     {
         if ($employee) {
-            $query = $employee->offices()
-                ->where('offices.id', $office->id)
+            $query = $employee->groups()
+                ->where('groups.id', $group->id)
                 ->select(self::FIELDS)
                 ->withCount('employees');
 
             $this->active($query, $request);
 
-            return new OfficeResource($query->firstOrFail());
+            return new GroupResource($query->firstOrFail());
         }
 
-        $office->loadCount('employees');
+        $group->loadCount('employees');
 
-        return new OfficeResource($office);
+        return new GroupResource($group);
     }
 }
