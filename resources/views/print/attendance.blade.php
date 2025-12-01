@@ -150,7 +150,7 @@
                                         <span class="italic bold">
                                             {{
                                                 collect($states)
-                                                    ->map(fn ($state) => is_string($state) ? \App\Enums\TimelogState::tryFrom($state)?->getLabel() : $state->getLabel())
+                                                    ->map(fn ($state) => is_string($state) || is_numeric($state) ? \App\Enums\TimelogState::tryFrom($state)?->getLabel() : $state->getLabel())
                                                     ->join(', ')
                                             }}
                                         </span>
@@ -161,7 +161,7 @@
                                         <span class="italic bold">
                                             {{
                                                 collect($modes)
-                                                    ->map(fn ($mode) => is_string($mode) ? \App\Enums\TimelogMode::tryFrom($mode)?->getLabel() : $mode->getLabel())
+                                                    ->map(fn ($mode) => is_string($mode) || is_numeric($state) ? \App\Enums\TimelogMode::tryFrom($mode)?->getLabel() : $mode->getLabel())
                                                     ->unique()
                                                     ->join(', ')
                                             }}
