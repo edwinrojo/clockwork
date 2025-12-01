@@ -201,8 +201,8 @@ class ListTimesheets extends ListRecords
             ])
             ->recordActions([
                 ActionGroup::make([
-                    UpdateEmployeeAction::make()
-                        ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class),
+                    // UpdateEmployeeAction::make()
+                    //     ->visible(fn () => ($this->filters['model'] ?? Employee::class) === Employee::class),
                     Action::make('export')
                         ->label('Export')
                         ->requiresConfirmation()
