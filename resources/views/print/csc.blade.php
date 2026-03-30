@@ -304,7 +304,7 @@ $generator = fn ($timesheet) => (new GenerateQrCode) (
                                             ])
                                             style="padding-right:14pt;"
                                         >
-                                            {{ $timetable?->overtime }}
+                                            {{-- {{ $timetable?->overtime }} --}}
                                         </td>
                                     @endif
                                 </tr>
