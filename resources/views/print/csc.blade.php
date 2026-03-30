@@ -242,9 +242,9 @@ $generator = fn ($timesheet) => (new GenerateQrCode) (
                                             >
                                                 {{ substr($timetable->punch[$punch]['time'] ?? '', 0, strrpos($timetable?->punch[$punch]['time'] ?? '', ":")) }}
                                                 @if (isset($timetable->punch[$punch]['undertime']) && ($ut = $timetable?->punch[$punch]['undertime']) > 0)
-                                                    <span class="undertime-badge">
+                                                    {{-- <span class="undertime-badge">
                                                         {{ $ut }}
-                                                    </span>
+                                                    </span> --}}
                                                 @endif
                                                 @if ($timetable->punch[$punch]['recast'] ?? false)
                                                     <sup @style([
