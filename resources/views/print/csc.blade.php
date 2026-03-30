@@ -294,7 +294,7 @@ $generator = fn ($timesheet) => (new GenerateQrCode) (
                                         ])
                                         style="padding-right:14pt;"
                                     >
-                                        {{ $timesheet->getPeriod() === 'overtimeWork' && ! $preview ? $timetable?->overtime : $timetable?->undertime }}
+                                        {{-- {{ $timesheet->getPeriod() === 'overtimeWork' && ! $preview ? $timetable?->overtime : $timetable?->undertime }} --}}
                                     </td>
                                     @if($preview && $overtime)
                                         <td
@@ -304,7 +304,7 @@ $generator = fn ($timesheet) => (new GenerateQrCode) (
                                             ])
                                             style="padding-right:14pt;"
                                         >
-                                            {{-- {{ $timetable?->overtime }} --}}
+                                            {{ $timetable?->overtime }}
                                         </td>
                                     @endif
                                 </tr>
